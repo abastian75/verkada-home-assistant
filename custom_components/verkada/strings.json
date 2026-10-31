@@ -1,0 +1,117 @@
+{
+  "title": "Verkada",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect Verkada",
+        "description": "Connect your Command organization. API keys are stored on Home Assistant, never in GitHub. After setup, use the integration options to choose cameras and enable LPR or Helix.",
+        "data": {
+          "name": "Name",
+          "region": "Verkada service region",
+          "org_id": "Organization ID",
+          "api_key": "API key",
+          "streaming_api_key": "Streaming API key (optional)"
+        },
+        "data_description": {
+          "name": "Name shown in the HA sidebar.",
+          "region": "Use the region where your Command organization was created.",
+          "org_id": "The UUID of your Verkada Command organization.",
+          "api_key": "A top-level key with Camera device read permission. Enable alerts, thumbnails, LPR and Helix permissions for the features you use.",
+          "streaming_api_key": "Use a separate key with live/history streaming permission if required. Leave blank to use the API key above."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Update Verkada credentials",
+        "description": "Enter valid credentials for the same organization. API keys are entered again; blank streaming key uses the main key.",
+        "data": {
+          "name": "Name",
+          "region": "Verkada service region",
+          "org_id": "Organization ID",
+          "api_key": "API key",
+          "streaming_api_key": "Streaming API key (optional)"
+        },
+        "data_description": {
+          "name": "Name shown in the HA sidebar.",
+          "region": "Use the region where your Command organization was created.",
+          "org_id": "The UUID of your Verkada Command organization.",
+          "api_key": "A top-level key with Camera device read permission. Enable alerts, thumbnails, LPR and Helix permissions for the features you use.",
+          "streaming_api_key": "Use a separate key with live/history streaming permission if required. Leave blank to use the API key above."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Verkada",
+        "description": "Replace credentials for this organization. The organization and service region must remain the same; add a separate integration for another organization.",
+        "data": {
+          "name": "Name",
+          "region": "Verkada service region",
+          "org_id": "Organization ID",
+          "api_key": "API key",
+          "streaming_api_key": "Streaming API key (optional)"
+        },
+        "data_description": {
+          "name": "Name shown in the HA sidebar.",
+          "region": "Use the region where your Command organization was created.",
+          "org_id": "The UUID of your Verkada Command organization.",
+          "api_key": "A top-level key with Camera device read permission. Enable alerts, thumbnails, LPR and Helix permissions for the features you use.",
+          "streaming_api_key": "Use a separate key with live/history streaming permission if required. Leave blank to use the API key above."
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Credentials rejected. Check the API key and service region.",
+      "missing_permission": "The API key needs read permission for Camera devices.",
+      "cannot_connect": "Cannot connect to Verkada. Check connectivity, API response and rate limits.",
+      "invalid_org": "Enter a valid organization UUID."
+    },
+    "abort": {
+      "already_configured": "This organization is already configured.",
+      "reauth_successful": "Credentials updated.",
+      "reconfigure_successful": "Configuration updated.",
+      "unique_id_mismatch": "The organization or region does not match this entry."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Verkada options",
+        "description": "Leave camera selection empty to include all cameras. Only select actual LPR-enabled cameras for LPR polling. Helix requires an existing event type UID; the plate attribute is the exact field name in your custom schema.",
+        "data": {
+          "camera_ids": "Cameras",
+          "poll_interval": "Poll interval (seconds)",
+          "alerts": "Poll camera alerts",
+          "lpr_camera_ids": "LPR cameras",
+          "helix_event_type": "Helix event type UID",
+          "helix_plate_attribute": "Helix plate attribute",
+          "webhook_secret": "Webhook shared secret",
+          "history_days": "Local history retention (days)",
+          "high_resolution": "High resolution video and thumbnails"
+        },
+        "data_description": {
+          "camera_ids": "Empty includes all cameras, including newly discovered cameras.",
+          "poll_interval": "30\u2013900 seconds. Cloud event polling and camera health share this interval.",
+          "alerts": "Enable if the API key has camera alert read permission. Webhooks work independently.",
+          "lpr_camera_ids": "Select only cameras already enabled for LPR in Command.",
+          "helix_event_type": "Leave blank to disable Helix polling.",
+          "helix_plate_attribute": "Exact custom attribute containing the plate number, such as license_plate.",
+          "webhook_secret": "Optional. At least 16 characters; configure the exact same secret in Command. Blank disables webhooks.",
+          "history_days": "1\u201330 days, capped at 1,000 events. This does not change Verkada video retention.",
+          "high_resolution": "Uses more bandwidth; affects newly opened streams."
+        }
+      }
+    },
+    "error": {
+      "short_secret": "Use at least 16 characters for the shared secret."
+    }
+  },
+  "selector": {
+    "region": {
+      "options": {
+        "us": "United States",
+        "us2": "United States (Ohio)",
+        "eu": "Europe",
+        "au": "Australia",
+        "gov": "US GovCloud"
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+name: Validate
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install ruff
+      - run: ruff check custom_components tests
+      - run: ruff format --check custom_components tests
+      - run: node --check custom_components/verkada/frontend/verkada-panel.js
+      - name: Browser checks
+        env:
+          NODE_PATH: ${{ runner.temp }}/browser/node_modules
+        run: |
+          npm install --prefix "$RUNNER_TEMP/browser" playwright@1.64.1
+          "$RUNNER_TEMP/browser/node_modules/.bin/playwright" install --with-deps chromium
+          python -m http.server 8769 --bind 127.0.0.1 &
+          node tests/frontend.test.cjs
+      - name: Contract tests in the official HA runtime
+        run: docker run --rm --network none -v "$PWD:/repo:ro" -w /repo ghcr.io/home-assistant/home-assistant:2026.10.4 python tests/test_core.py
+      - name: Isolated Home Assistant smoke test
+        run: docker run --rm --network none -v "$PWD:/repo:ro" -w /repo ghcr.io/home-assistant/home-assistant:2026.10.4 python tests/ha_smoke.py
+  hacs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hacs/action@main
+        with:
+          category: integration
+  hassfest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: home-assistant/actions/hassfest@master
