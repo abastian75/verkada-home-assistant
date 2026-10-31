@@ -1,3 +1,18 @@
+# Validation — 0.2.9
+
+The live Last plate label now occupies its own right-aligned row below the camera
+title, above the video. All camera headers reserve equal space so LPR/non-LPR
+video positions and tile heights still match. Desktop/390px geometry tests verify
+the second row, right edge, unchanged height without plates and long-value clipping.
+
+The installed system had a 60-second poll and no webhook configured. A current
+comparison found HA's latest plate matched the vendor API; no missed/newer upstream
+detections were found in that check. The existing options flow reduces polling
+to 30 seconds (the running version's supported minimum); new installs default to
+30 seconds too. This reduces the polling wait, not vendor processing/network delay.
+Webhook delivery remains available for event-driven updates but was not configured
+or exposed as part of this change. No Core restart/editor reload is included.
+
 # Validation — 0.2.8
 
 Last plate now shares the live camera title row in both the sidebar and Camera

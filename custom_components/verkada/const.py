@@ -1,7 +1,7 @@
 """Constants for the unofficial Verkada integration."""
 
 DOMAIN = "verkada"
-VERSION = "0.2.8"
+VERSION = "0.2.9"
 REGIONS = {
     "us": "https://api.verkada.com",
     "us2": "https://api.oh.verkada.com",
@@ -10,7 +10,7 @@ REGIONS = {
     "gov": "https://api.verkadagov.com",
 }
 DEFAULT_OPTIONS = {
-    "poll_interval": 60,
+    "poll_interval": 30,
     "alerts": True,
     "lpr_camera_ids": [],
     "helix_event_type": "",
