@@ -1,7 +1,7 @@
 """Constants for the unofficial Verkada integration."""
 
 DOMAIN = "verkada"
-VERSION = "0.2.3"
+VERSION = "0.2.4"
 REGIONS = {
     "us": "https://api.verkada.com",
     "us2": "https://api.oh.verkada.com",
@@ -19,4 +19,5 @@ DEFAULT_OPTIONS = {
     "webhook_secret": "",
     "history_days": 7,
     "high_resolution": False,
+    "live_codec": "hevc",
 }

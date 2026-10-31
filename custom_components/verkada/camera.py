@@ -78,7 +78,9 @@ class VerkadaCamera(VerkadaEntity, Camera):
     async def stream_source(self):
         try:
             url = await self.coordinator.api.stream_url(
-                self.camera_id, high=self.coordinator.options["high_resolution"]
+                self.camera_id,
+                high=self.coordinator.options["high_resolution"],
+                codec=self.coordinator.options["live_codec"],
             )
             self._stream_jwt = self.coordinator.api._jwt
             return url

@@ -1,9 +1,11 @@
 # Verkada for Home Assistant
 
-Recorded playback uses Verkada's native HEVC stream: a real API check found
-H.264 history playlists returning 404 video segments while the same HEVC interval
-worked. Recordings need HEVC support in the viewing browser/device. Live video
-uses H.264. Cloud buffering and retained-footage availability still apply.
+Live and recorded playback default to Verkada's native HEVC video. Real tests found
+H.264 history segments returning 404 and some H.264 live feeds ending after only
+4–5 seconds; the same native HEVC feeds worked continuously during the test.
+HEVC support is required in the viewing browser/device. For live video, a
+**Live video format → H.264** compatibility option is available in integration
+settings. Cloud buffering and retained-footage availability still apply.
 
 ## Downloaded in HACS? Finish setup here
 

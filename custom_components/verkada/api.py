@@ -162,7 +162,7 @@ class VerkadaClient:
             params["timestamp"] = timestamp
         return await self.request("GET", path, params=params, binary=True)
 
-    async def stream_url(self, camera_id, *, high=False, start=0, end=0):
+    async def stream_url(self, camera_id, *, high=False, start=0, end=0, codec="hevc"):
         async with self._lock:
             if not self._jwt or time.monotonic() >= self._jwt_until:
                 data = await self._request(
@@ -185,8 +185,7 @@ class VerkadaClient:
                     "start_time": start,
                     "end_time": end,
                     "resolution": "high_res" if high else "low_res",
-                    # Recorded H.264 transcoding can return a playlist with 404 segments.
-                    "codec": "hevc" if start else "h264",
+                    "codec": codec,
                     "type": "stream",
                 }
             )

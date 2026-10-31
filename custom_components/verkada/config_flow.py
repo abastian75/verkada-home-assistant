@@ -173,6 +173,13 @@ class VerkadaOptionsFlow(config_entries.OptionsFlow):
                         vol.Coerce(int), vol.Range(min=1, max=30)
                     ),
                     vol.Required("high_resolution", default=options["high_resolution"]): bool,
+                    vol.Required(
+                        "live_codec", default=options["live_codec"]
+                    ): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=["hevc", "h264"], translation_key="live_codec"
+                        )
+                    ),
                 }
             ),
         )

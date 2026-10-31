@@ -35,7 +35,8 @@ export async function attachVideo(video, url, onError = () => {}, onPlaying = ()
     });
   };
   video.onplaying = () => { if (current()) { clearTimeout(video._verkadaTimeout); onPlaying(); } };
-  video.onerror = () => fail("The browser could not decode this video. Select Retry; check the camera's streaming format if it persists.");
+  const decodeError = "This browser could not decode the video. Use a device with HEVC support, or select H.264 live video in Verkada options.";
+  video.onerror = () => fail(decodeError);
   video._verkadaTimeout = setTimeout(() => {
     if (current() && (video.readyState < 2 || video.paused)) fail("No playable video arrived. Select Retry; check streaming permissions and connectivity.");
   }, 30000);
@@ -48,6 +49,7 @@ export async function attachVideo(video, url, onError = () => {}, onPlaying = ()
     hls.on(Hls.Events.MANIFEST_PARSED, play);
     hls.on(Hls.Events.ERROR, (_, data) => {
       if (!current() || !data.fatal) return;
+      if (data.type === Hls.ErrorTypes.MEDIA_ERROR) { fail(decodeError); return; }
       fail("Video stream failed. Select Retry; check streaming permissions, network access and recording retention.");
     });
     hls.attachMedia(video);

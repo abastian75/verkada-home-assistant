@@ -1,4 +1,19 @@
-# Validation — 0.2.3
+# Validation — 0.2.4
+
+## Native live-video fix
+
+Direct parallel probes outside HA reproduced the reported stalls: Side Yard's
+H.264 input ended after 4.96 video seconds / 120 packets, and Driveway's after
+3.96 seconds / 96 packets. The native HEVC inputs each delivered the full 25-second
+test window (577 / 601 packets). This is evidence of a truncated input feed,
+separate from client connection pressure. Actual Chrome playback of a real HEVC
+recording advanced past 38 seconds, confirming support on the user's browser.
+
+Live defaults to HEVC, retaining low resolution. An explicit H.264 live format
+option remains for browsers without HEVC support. Recordings remain HEVC.
+Contract tests cover default/native and explicit H.264 URLs; the official HA
+runtime tests cover setup/options and camera streams. Browser errors explain
+HEVC support and the live compatibility option.
 
 ## Added for 0.2.3
 

@@ -1,5 +1,5 @@
-import { attachVideo, clearVideo } from "./player.js?v=0.2.3";
-import { plateText } from "./plate.js?v=0.2.3";
+import { attachVideo, clearVideo } from "./player.js?v=0.2.4";
+import { plateText } from "./plate.js?v=0.2.4";
 /* Native HA panel: no build step, external scripts or credentials in the browser. */
 class VerkadaPanel extends HTMLElement {
   constructor() {
