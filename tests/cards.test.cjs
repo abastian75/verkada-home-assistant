@@ -39,6 +39,8 @@ const path=require('node:path');
  await page.locator('verkada-lpr-card').getByText(/No plate detections/).waitFor();
  await page.goto('http://127.0.0.1:8769/tests/cards_fixture.html?denied=1');
  await page.locator('verkada-lpr-card').getByRole('alert').filter({hasText:'You do not have access'}).waitFor();
+ await page.goto('http://127.0.0.1:8769/tests/cards_fixture.html?registry_race=1');
+ await page.locator('verkada-camera-card').getByText(/Last plate: TEST123/).waitFor();
  assert.deepEqual(errors,[]);await browser.close();
  console.log('PASS: three registered cards, automatic live startup, LPR/events, visual editor, empty/error/XSS states, desktop/mobile/light/dark');
 })().catch(error=>{console.error(error);process.exit(1);});

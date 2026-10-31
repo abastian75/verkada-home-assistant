@@ -1,5 +1,8 @@
-import { attachVideo, clearVideo } from "./player.js?v=0.2.2";
-import { plateText } from "./plate.js?v=0.2.2";
+import { attachVideo, clearVideo } from "./player.js?v=0.2.3";
+import { plateText } from "./plate.js?v=0.2.3";
+
+// HA replaces the native registry during boot; earlier definitions are silently lost.
+while (!customElements.get("home-assistant")) await new Promise(resolve => setTimeout(resolve, 50));
 
 const styles = `
   :host{display:block;color:var(--primary-text-color,#212121);font-family:var(--paper-font-body1_-_font-family,Roboto,sans-serif)}
@@ -62,7 +65,7 @@ class VerkadaCameraCard extends VerkadaBase {
     if(this._running||!this.isConnected||!this._config.entity)return;
     const state=this._hass.states[this._config.entity];
     if(!state||["unavailable","unknown"].includes(state.state))return;
-    this._running=true;this._text("error","");this._text("status","Connecting live video…");
+    this._running=true;this._text("error","");this._text("status","Connecting live videoâ€¦");
     const video=this.shadowRoot.querySelector("video"),button=this.shadowRoot.querySelector("#retry");button.hidden=true;
     try{
       const result=await this._hass.callWS({type:"camera/stream",entity_id:this._config.entity,format:"hls"});
@@ -77,7 +80,7 @@ class VerkadaHistoryCard extends VerkadaBase {
     if(!this.isConnected||!this._hass||!this._config)return;
     if(!this._built){
       this._frame(this.plates?"Verkada LPR":"Verkada events");
-      this.shadowRoot.querySelector("#body").innerHTML=`<div class="content"><p id="error" class="error" role="alert"></p><div id="latest"></div><div id="recording" class="recording"></div><p id="status" class="muted" role="status">Loading…</p><ul id="events"></ul><div class="actions"><button id="refresh">Refresh</button></div></div>`;
+      this.shadowRoot.querySelector("#body").innerHTML=`<div class="content"><p id="error" class="error" role="alert"></p><div id="latest"></div><div id="recording" class="recording"></div><p id="status" class="muted" role="status">Loadingâ€¦</p><ul id="events"></ul><div class="actions"><button id="refresh">Refresh</button></div></div>`;
       this.shadowRoot.querySelector("#refresh").onclick=()=>this._refresh();this._built=true;
     }
     if(!this._timer){this._refresh();this._timer=setInterval(()=>this._refresh(),15000);}
@@ -100,16 +103,16 @@ class VerkadaHistoryCard extends VerkadaBase {
     const failures=Object.entries(data.sources).filter(([key,value])=>value.state!=="ok"&&(!this.plates||key==="helix"||key.startsWith("lpr:")));
     if(!data.connected)this._text("error","Connection unavailable. Showing retained history.");
     else if(failures.length)this._text("error",failures.map(([key,value])=>`${key}: ${value.message||value.state}`).join("\n"));
-    this._text("status",this.plates&&!tracking?"Plate tracking is not enabled for this camera. Select LPR cameras or Helix plate cameras in integration options.":!data.events.length?(this.plates?"No plate detections in retained history. The first LPR sync checks the last 24 hours.":"No alerts in retained history."):`${data.events.length} recent ${this.plates?"plate detections":"alerts"} · Updated ${new Date((data.last_poll||Date.now()/1000)*1000).toLocaleTimeString()}`);
+    this._text("status",this.plates&&!tracking?"Plate tracking is not enabled for this camera. Select LPR cameras or Helix plate cameras in integration options.":!data.events.length?(this.plates?"No plate detections in retained history. The first LPR sync checks the last 24 hours.":"No alerts in retained history."):`${data.events.length} recent ${this.plates?"plate detections":"alerts"} Â· Updated ${new Date((data.last_poll||Date.now()/1000)*1000).toLocaleTimeString()}`);
     const latest=this.shadowRoot.querySelector("#latest");latest.replaceChildren();
     if(this.plates&&data.events[0]){
       const event=data.events[0],box=document.createElement("div");box.className="latest";
-      const details=document.createElement("div"),plate=document.createElement("strong"),seen=document.createElement("p");plate.textContent=event.plate;plate.className="plate";seen.className="muted";seen.textContent=`${names[event.camera_id]||"Camera"} · ${new Date(event.timestamp*1000).toLocaleString()}`;details.append(plate,seen);box.append(details);
+      const details=document.createElement("div"),plate=document.createElement("strong"),seen=document.createElement("p");plate.textContent=event.plate;plate.className="plate";seen.className="muted";seen.textContent=`${names[event.camera_id]||"Camera"} Â· ${new Date(event.timestamp*1000).toLocaleString()}`;details.append(plate,seen);box.append(details);
       if(event.image_url)box.append(this._image(event));latest.append(box);
     }
     const list=this.shadowRoot.querySelector("#events");list.replaceChildren();
     for(const event of data.events){
-      const row=document.createElement("li"),details=document.createElement("div"),label=document.createElement("span"),meta=document.createElement("p");label.className=this.plates?"label plate":"label";label.textContent=event.plate||event.label;meta.className="muted";meta.textContent=`${names[event.camera_id]||"Camera"} · ${new Date(event.timestamp*1000).toLocaleString()}${event.confidence!=null?` · ${Math.round(event.confidence*100)}%`:""}`;details.append(label,meta);
+      const row=document.createElement("li"),details=document.createElement("div"),label=document.createElement("span"),meta=document.createElement("p");label.className=this.plates?"label plate":"label";label.textContent=event.plate||event.label;meta.className="muted";meta.textContent=`${names[event.camera_id]||"Camera"} Â· ${new Date(event.timestamp*1000).toLocaleString()}${event.confidence!=null?` Â· ${Math.round(event.confidence*100)}%`:""}`;details.append(label,meta);
       if(Object.keys(event.attributes||{}).length){const extra=document.createElement("details"),summary=document.createElement("summary"),pre=document.createElement("pre");summary.textContent="Details";pre.textContent=JSON.stringify(event.attributes,null,2);extra.append(summary,pre);details.append(extra);}
       if(event.image_url&&!this.plates)row.append(this._image(event));row.append(details);
       const watch=document.createElement("button");watch.textContent="Watch";watch.setAttribute("aria-label",`Watch recording for ${event.plate||event.label}`);watch.onclick=()=>this._play(event);row.append(watch);list.append(row);
@@ -117,7 +120,7 @@ class VerkadaHistoryCard extends VerkadaBase {
   }
   _image(event){const image=document.createElement("img");image.src=event.image_url;image.alt=this.plates?"Plate capture":"Event capture";image.loading="lazy";image.referrerPolicy="no-referrer";return image;}
   async _play(event){
-    const target=this.shadowRoot.querySelector("#recording");target.querySelectorAll("video").forEach(clearVideo);target.textContent="Starting recording…";
+    const target=this.shadowRoot.querySelector("#recording");target.querySelectorAll("video").forEach(clearVideo);target.textContent="Starting recordingâ€¦";
     try{
       const result=await this._call("playback",{camera_id:event.camera_id,start:Math.max(1,Math.floor(event.timestamp)-10),end:Math.min(Math.floor(Date.now()/1000)-1,Math.floor(event.timestamp)+50)});
       this._ownsPlayback=true;if(!this.isConnected){await this._call("stop");return;}
