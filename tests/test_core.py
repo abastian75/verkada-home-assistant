@@ -131,6 +131,9 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(urlsplit(url).netloc, "api.eu.verkada.com")
         self.assertEqual(params["start_time"], ["100"])
         self.assertEqual(params["resolution"], ["high_res"])
+        self.assertEqual(params["codec"], ["hevc"])
+        live = parse_qs(urlsplit(await api.stream_url("c1")).query)
+        self.assertEqual(live["codec"], ["h264"])
         self.assertNotIn("test-api-key", url)
         self.assertEqual(
             api._request.await_args.kwargs["headers"], {"x-api-key": "test-stream-key"}

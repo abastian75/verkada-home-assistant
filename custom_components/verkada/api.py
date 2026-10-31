@@ -185,7 +185,8 @@ class VerkadaClient:
                     "start_time": start,
                     "end_time": end,
                     "resolution": "high_res" if high else "low_res",
-                    "codec": "h264",
+                    # Recorded H.264 transcoding can return a playlist with 404 segments.
+                    "codec": "hevc" if start else "h264",
                     "type": "stream",
                 }
             )

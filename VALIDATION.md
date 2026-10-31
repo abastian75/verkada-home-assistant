@@ -1,4 +1,28 @@
-# Validation — 0.2.0
+# Validation — 0.2.1
+
+## Real installation checks on 2026-10-30
+
+- HACS downloaded 0.2.0 on the user's existing HA installation; after restart,
+  HA displayed version 0.2.0 and discovered the existing cameras.
+- All five real cameras produced decoded video automatically in the sidebar,
+  with nonzero video dimensions and advancing playback times. Some low-resolution
+  feeds stalled/reconnected. High-resolution feeds also produced video on all five;
+  this does not establish uninterrupted or multi-day reliability.
+- Native LPR polling succeeded and imported recent detections from the initial
+  24-hour window. Actual plate values, camera identifiers, images and credentials
+  are excluded from the repository.
+- A real recorded H.264 playlist returned HTTP 200 but its video segments returned
+  HTTP 404, "Error fetching historical video m4s." The same camera/time interval
+  with the documented default HEVC codec returned segments successfully and the
+  official HA decoder decoded an actual frame. Version 0.2.1 requests HEVC for
+  recordings and keeps H.264 for live video; contract tests verify both choices.
+- The installed 0.2.1 recording path successfully served a real LPR clip through
+  HA's HLS proxy and the official HA decoder decoded HEVC at 3840×2160. Two plate
+  sensors were active; eight legacy non-LPR plate sensors were disabled/hidden.
+- Created and read-back verified a separate example Verkada Cards dashboard on
+  the user's HA, without modifying existing dashboards. Final real-browser card
+  and HEVC rendering checks were blocked by a stalled Chrome automation connection;
+  they are not claimed as passed. Synthetic card/editor/browser checks passed.
 
 ## Added for 0.2.0
 
@@ -17,8 +41,8 @@
   click in the sidebar/camera card, and plays/closes a recording in the LPR card.
 - Real HA inspection of the older release found LPR was not configured; enabled
   polling for the intended LPR camera only. Real camera discovery/thumbnails work.
-  Reproduced the old grey/paused live-video pane; updated-player verification
-  against the real feeds is still pending at this point.
+  Reproduced the old grey/paused live-video pane; the updated player produced
+  actual video automatically as described above.
 
 ## Passed locally
 
@@ -49,12 +73,11 @@ documentation (including `detections`, `notifications`, `events` and streaming `
 
 ## Not yet validated
 
-- Real Verkada authentication, organization-specific permissions or payloads.
-- Real live/history footage, continuous token renewal across an actual expiring
-  Verkada stream, cloud latency and retained-video availability.
+- All permission combinations, continuous token renewal across an actual expiring
+  Verkada stream, uninterrupted cloud playback and retained-video availability.
+- End-to-end recorded playback in every browser/device; HEVC support varies.
 - A real Command webhook reaching an externally exposed HA instance.
 - Actual Helix event type/plate schema and production LPR volume.
-- Installation through the user's existing HACS/HA instance or physical devices.
 - Safari/iOS, other HA releases, multi-day reliability and large deployments.
 
 ## Reproduce
