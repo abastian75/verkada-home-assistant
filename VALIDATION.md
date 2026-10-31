@@ -1,4 +1,4 @@
-# Validation â€” 0.2.2
+# Validation — 0.2.3
 
 ## Added for 0.2.3
 
@@ -40,7 +40,7 @@
   official HA decoder decoded an actual frame. Version 0.2.1 requests HEVC for
   recordings and keeps H.264 for live video; contract tests verify both choices.
 - The installed 0.2.1 recording path successfully served a real LPR clip through
-  HA's HLS proxy and the official HA decoder decoded HEVC at 3840Ã—2160. Two plate
+  HA's HLS proxy and the official HA decoder decoded HEVC at 3840×2160. Two plate
   sensors were active; eight legacy non-LPR plate sensors were disabled/hidden.
 - Created and read-back verified a separate example Verkada Cards dashboard on
   the user's HA, without modifying existing dashboards. Final real-browser card
@@ -86,7 +86,7 @@
   a clearly labeled synthetic fixture: camera tiles, source/camera/text filters,
   cloud search request, playback error, webhook instructions, no horizontal main
   overflow, and HTML-in-event-label rendered as text rather than executed.
-- The actual bundled HLS.js player decoded changing **320Ã—180** synthetic video
+- The actual bundled HLS.js player decoded changing **320×180** synthetic video
   for both live-view and recorded-playback paths in the browser, without page errors.
 - Rendered desktop/mobile views inspected; encoding and accessible select labels corrected.
 

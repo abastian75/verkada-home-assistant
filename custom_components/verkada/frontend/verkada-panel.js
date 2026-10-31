@@ -50,7 +50,7 @@ class VerkadaPanel extends HTMLElement {
       </style>
       <header><ha-menu-button></ha-menu-button><h1>Verkada</h1><button id="settings">Configure</button></header>
       <main><nav aria-label="Verkada views"><button data-tab="live" aria-selected="true">Live cameras</button><button data-tab="events" aria-selected="false">Events & recordings</button><button data-tab="setup" aria-selected="false">Connection</button></nav>
-      <div id="message" role="alert"></div><div id="health" role="status">Connecting to Home Assistantâ€¦</div>
+      <div id="message" role="alert"></div><div id="health" role="status">Connecting to Home Assistant…</div>
       <section id="live"><h2>Live cameras</h2><p class="muted">Live video starts automatically. Camera snapshots remain visible while streams connect.</p><div id="cameras"></div></section>
       <section id="events" hidden><h2>Events & recordings</h2>
         <div class="filters"><label>Camera<select id="camera" aria-label="Camera"><option value="">All cameras</option></select></label><label>Source<select id="source" aria-label="Source"><option value="">All saved events</option><option value="alert">Camera alerts</option><option value="lpr">Native LPR</option><option value="helix">Helix</option><option value="webhook">Other webhooks</option></select></label><label>Search plate or event<input id="query" type="search" maxlength="200" placeholder="Plate, event or camera"></label></div>
@@ -59,7 +59,7 @@ class VerkadaPanel extends HTMLElement {
         <p class="muted">Cloud search: choose a source and up to 24 hours. Playback: choose a camera and up to one hour. Watch opens a 60-second clip around an event.</p>
         <div id="player"></div><p id="count" class="muted"></p><div class="table-wrap"><table><thead><tr><th>Time</th><th>Camera</th><th>Plate / event</th><th class="optional">Image</th><th>Recording</th></tr></thead><tbody id="rows"></tbody></table></div><div id="pager"><button id="previous">Previous</button><span id="page"></span><button id="next">Next</button></div>
       </section>
-      <section id="setup" hidden><h2>Connection</h2><p>Use <strong>Configure</strong> to open the integration settings. The options menu controls cameras, polling, LPR, Helix, history retention and video resolution. Use Reconfigure to replace API keys.</p><div id="sources"></div><h2>Incoming webhooks</h2><p id="webhook-state"></p><code id="webhook-url"></code><p>In Verkada Command â†’ Admin â†’ APIs and Integrations â†’ Webhooks, enter this URL and the same shared secret configured in HA options. A reachable HTTPS URL with a trusted certificate is required. An unset external HA URL must be configured in HA network settings first.</p><p>API keys stay on Home Assistant. The panel is restricted to HA administrators; camera and sensor entities use HA's normal permissions. Local history holds up to 1,000 events within the configured retention period. Signed image links may expire sooner.</p></section></main>`;
+      <section id="setup" hidden><h2>Connection</h2><p>Use <strong>Configure</strong> to open the integration settings. The options menu controls cameras, polling, LPR, Helix, history retention and video resolution. Use Reconfigure to replace API keys.</p><div id="sources"></div><h2>Incoming webhooks</h2><p id="webhook-state"></p><code id="webhook-url"></code><p>In Verkada Command → Admin → APIs and Integrations → Webhooks, enter this URL and the same shared secret configured in HA options. A reachable HTTPS URL with a trusted certificate is required. An unset external HA URL must be configured in HA network settings first.</p><p>API keys stay on Home Assistant. The panel is restricted to HA administrators; camera and sensor entities use HA's normal permissions. Local history holds up to 1,000 events within the configured retention period. Signed image links may expire sooner.</p></section></main>`;
     const root = this.shadowRoot;
     const now = new Date();
     const local = date => new Date(date.getTime() - date.getTimezoneOffset()*60000).toISOString().slice(0,16);
@@ -101,7 +101,7 @@ class VerkadaPanel extends HTMLElement {
       if (data.search_results) {this._searchEvents=data.search_results;this._searchOmitted=data.search_omitted;}
       if (this._searchEvents) data.events=[...new Map([...data.events,...this._searchEvents].map(e=>[e.id,e])).values()].sort((a,b)=>b.timestamp-a.timestamp);
       this._text("message", this._searchOmitted ? `${this._searchOmitted} search results are not displayed. Narrow the time range.` : "");
-      this._text("health", data.connected ? `Connected Â· Last poll ${this._time(data.last_poll)}${Object.values(data.sources).some(s=>s.state!=="ok") ? " Â· Some event sources need attention; see Connection" : ""}` : "Verkada connection unavailable. Cached history is shown; check integration settings.");
+      this._text("health", data.connected ? `Connected · Last poll ${this._time(data.last_poll)}${Object.values(data.sources).some(s=>s.state!=="ok") ? " · Some event sources need attention; see Connection" : ""}` : "Verkada connection unavailable. Cached history is shown; check integration settings.");
       this.shadowRoot.querySelector("h1").textContent=data.title;
       const select = this.shadowRoot.querySelector("#camera");
       const value=select.value;
@@ -121,17 +121,17 @@ class VerkadaPanel extends HTMLElement {
       if (this._tab!=="live" || !this.isConnected) return;
       for (const camera of this._data.cameras) {
         const wrapper=document.createElement("div");
-        const title=document.createElement("p");title.className="camera-title";title.textContent=`${camera.name} Â· ${camera.status||"Unknown"}`;wrapper.append(title);
+        const title=document.createElement("p");title.className="camera-title";title.textContent=`${camera.name} · ${camera.status||"Unknown"}`;wrapper.append(title);
         if (!camera.entity_id) { const message=document.createElement("p");message.textContent="Camera entity is disabled or not ready.";wrapper.append(message); }
         else {
-          const image=document.createElement("img");image.alt=`${camera.name} â€” latest cloud thumbnail`;image.dataset.entity=camera.entity_id;
+          const image=document.createElement("img");image.alt=`${camera.name} — latest cloud thumbnail`;image.dataset.entity=camera.entity_id;
           const picture=this._hass.states[camera.entity_id]?.attributes.entity_picture;
           if (picture) image.src=this._hass.hassUrl(picture);
           const video=document.createElement("video");video.hidden=true;video.controls=true;video.muted=true;video.autoplay=true;video.playsInline=true;
-          const state=document.createElement("p");state.className="muted";state.setAttribute("role","status");state.textContent="Connecting live videoâ€¦";
+          const state=document.createElement("p");state.className="muted";state.setAttribute("role","status");state.textContent="Connecting live video…";
           const button=document.createElement("button");button.textContent="Retry";button.hidden=true;
           const startLive=async()=>{
-            button.hidden=true;button.disabled=true;state.textContent="Connecting live videoâ€¦";
+            button.hidden=true;button.disabled=true;state.textContent="Connecting live video…";
             try {
               const result=await this._hass.callWS({type:"camera/stream",entity_id:camera.entity_id,format:"hls"});
               if(this._tab!=="live"||!wrapper.isConnected)return;
@@ -169,18 +169,18 @@ class VerkadaPanel extends HTMLElement {
       const row=document.createElement("tr");
       for (const text of [this._time(event.timestamp), names[event.camera_id]||"Organization", event.plate||event.label]) { const cell=document.createElement("td"); cell.textContent=text; row.append(cell); }
       if (event.plate) row.children[2].className="plate";
-      const detail=document.createElement("small"); detail.className="muted"; detail.style.display="block"; detail.textContent=event.source+(event.confidence!=null ? ` Â· ${Math.round(event.confidence*100)}% confidence` : ""); row.children[2].append(detail);
+      const detail=document.createElement("small"); detail.className="muted"; detail.style.display="block"; detail.textContent=event.source+(event.confidence!=null ? ` · ${Math.round(event.confidence*100)}% confidence` : ""); row.children[2].append(detail);
       if (Object.keys(event.attributes||{}).length) { const details=document.createElement("details"), summary=document.createElement("summary"), content=document.createElement("pre"); summary.textContent="Event details"; content.textContent=JSON.stringify(event.attributes,null,2); details.append(summary,content); row.children[2].append(details); }
       const imageCell=document.createElement("td"); imageCell.className="optional";
       if (event.image_url) { const image=document.createElement("img"); image.src=event.image_url; image.alt="Event thumbnail"; image.loading="lazy"; image.referrerPolicy="no-referrer"; imageCell.append(image); }
-      else imageCell.textContent="â€”";
+      else imageCell.textContent="—";
       row.append(imageCell);
       const cell=document.createElement("td");
       if (event.camera_id && names[event.camera_id]) { const button=document.createElement("button"); button.textContent="Watch"; button.onclick=()=>this._play({camera_id:event.camera_id,start:Math.max(1,Math.floor(event.timestamp)-10),end:Math.min(Math.floor(Date.now()/1000)-1,Math.floor(event.timestamp)+50)});cell.append(button); }
       else cell.textContent="No linked camera";
       row.append(cell); rows.append(row);
     }
-    this._text("count",`${events.length} matching events Â· ${this._data.events.length} locally stored Â· up to ${this._data.history_days} days / 1,000 events. ${events.length ? "" : "Adjust filters, search Verkada history, or enable LPR/Helix in Configure."}`);
+    this._text("count",`${events.length} matching events · ${this._data.events.length} locally stored · up to ${this._data.history_days} days / 1,000 events. ${events.length ? "" : "Adjust filters, search Verkada history, or enable LPR/Helix in Configure."}`);
     this._text("page",`Page ${this._page+1} of ${Math.max(1,Math.ceil(events.length/50))}`);
     root.querySelector("#previous").disabled=this._page===0;
     root.querySelector("#next").disabled=(this._page+1)*50>=events.length;
@@ -190,17 +190,17 @@ class VerkadaPanel extends HTMLElement {
     if (!["alert","lpr","helix"].includes(source)) { this._error(new Error("Choose Camera alerts, Native LPR or Helix before searching Verkada history.")); return; }
     const range=this._range();
     if (!Number.isFinite(range.start)||!Number.isFinite(range.end)) {this._error(new Error("Enter valid From and To dates."));return;}
-    const button=this.shadowRoot.querySelector("#cloud"); button.disabled=true; button.textContent="Searchingâ€¦";
+    const button=this.shadowRoot.querySelector("#cloud"); button.disabled=true; button.textContent="Searching…";
     await this._load("search",{...range,source});
     button.disabled=false; button.textContent="Search Verkada history";
   }
   async _play(range=this._range()) {
     if (!Number.isFinite(range.start)||!Number.isFinite(range.end)) {this._error(new Error("Enter valid From and To dates."));return;}
     this._text("message", "");
-    const target=this.shadowRoot.querySelector("#player");this._clearVideos("#player video");target.textContent="Starting recorded videoâ€¦";
+    const target=this.shadowRoot.querySelector("#player");this._clearVideos("#player video");target.textContent="Starting recorded video…";
     try {
       const result=await this._call("playback",range);
-      const label=document.createElement("p");label.textContent=`Recorded video Â· ${this._time(range.start)} â€“ ${this._time(range.end)}`;
+      const label=document.createElement("p");label.textContent=`Recorded video · ${this._time(range.start)} – ${this._time(range.end)}`;
       this._clearVideos("#player video");
       const player=document.createElement("video");player.controls=true;player.autoplay=true;player.muted=true;player.playsInline=true;
       const close=document.createElement("button");close.textContent="Close playback";close.onclick=()=>{this._clearVideo(player);target.replaceChildren();this._call("stop").catch(e=>this._error(e));};
@@ -212,7 +212,7 @@ class VerkadaPanel extends HTMLElement {
   async _attachVideo(video,url) {await attachVideo(video,url,error=>this._error(error));}
   _renderSetup() {
     const data=this._data,target=this.shadowRoot.querySelector("#sources");target.replaceChildren();
-    for (const [name,status] of Object.entries(data.sources)) { const paragraph=document.createElement("p");paragraph.textContent=`${name}: ${status.state}${status.message ? " â€” "+status.message : ""} Â· Last success ${this._time(status.last_success)}`;target.append(paragraph); }
+    for (const [name,status] of Object.entries(data.sources)) { const paragraph=document.createElement("p");paragraph.textContent=`${name}: ${status.state}${status.message ? " — "+status.message : ""} · Last success ${this._time(status.last_success)}`;target.append(paragraph); }
     this._text("webhook-state",data.webhook_enabled ? `Signature checking enabled. Last accepted event: ${this._time(data.last_webhook)}.` : "Webhooks disabled. Set a shared secret of at least 16 characters in integration options to enable them.");
     this._text("webhook-url",data.webhook_url);
   }
