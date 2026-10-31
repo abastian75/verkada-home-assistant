@@ -398,6 +398,75 @@ async def main():
                             }
                         )
                         assert not (await ws.receive_json())["success"]
+                        await ws.send_json(
+                            {"id": 5, "type": "verkada/stream", "entity_id": plate_camera.entity_id}
+                        )
+                        value = await ws.receive_json()
+                        assert value["success"], value
+                        live_url = value["result"]["url"]
+                        assert "SYNTHETIC" not in live_url
+                        upstream = f"{hub.api.base}/stream/cameras/v1/footage/stream/"
+                        manifest = (
+                            f'#EXTM3U\n#EXT-X-MAP:URI="{upstream}init.mp4?jwt=SYNTHETIC_JWT"\n'
+                            f"#EXTINF:2,\n{upstream}part.m4s?jwt=SYNTHETIC_JWT\n"
+                        ).encode()
+                        with patch(
+                            "custom_components.verkada.live.fetch_media",
+                            AsyncMock(
+                                return_value=(
+                                    manifest,
+                                    200,
+                                    {"Content-Type": "application/x-mpegURL"},
+                                )
+                            ),
+                        ):
+                            async with session.get("http://127.0.0.1:8123" + live_url) as response:
+                                assert response.status == 200
+                                rewritten = await response.text()
+                                assert (
+                                    "SYNTHETIC_JWT" not in rewritten and "https://" not in rewritten
+                                )
+                                assert 'URI="/api/verkada/live/' in rewritten
+                        segment = rewritten.splitlines()[-1]
+                        media = AsyncMock(
+                            return_value=(
+                                b"synthetic-video",
+                                206,
+                                {"Content-Type": "video/mp4", "Content-Range": "bytes 0-3/4"},
+                            )
+                        )
+                        with patch("custom_components.verkada.live.fetch_media", media):
+                            async with session.get(
+                                "http://127.0.0.1:8123" + segment, headers={"Range": "bytes=0-3"}
+                            ) as response:
+                                assert (
+                                    response.status == 206
+                                    and await response.read() == b"synthetic-video"
+                                )
+                                assert response.headers["Content-Range"] == "bytes 0-3/4"
+                            assert media.await_args.args[2] == "bytes=0-3"
+                        live_view = hass.data["verkada_live"]
+                        nonce = live_url.split("/")[-2]
+                        live_session = live_view.sessions[nonce]
+                        try:
+                            live_view.rewrite(
+                                nonce,
+                                live_session,
+                                upstream + "stream.m3u8",
+                                b"#EXTM3U\nhttp://127.0.0.1/private\n",
+                            )
+                        except web.HTTPBadGateway:
+                            pass
+                        else:
+                            raise AssertionError("Untrusted playlist host accepted")
+                        async with session.get(
+                            "http://127.0.0.1:8123/api/verkada/live/unknown/index.m3u8"
+                        ) as response:
+                            assert response.status == 404
+                        live_session["used"] -= 301
+                        async with session.get("http://127.0.0.1:8123" + live_url) as response:
+                            assert response.status == 404
+                        live_view.start(hub, CAM)
                     denied = await hass.auth.async_create_user("Synthetic no-access", group_ids=[])
                     denied_refresh = await hass.auth.async_create_refresh_token(
                         denied, client_id="http://localhost/"
@@ -421,8 +490,15 @@ async def main():
                         assert not (await ws.receive_json())["success"], (
                             "Denied user read plate history"
                         )
+                        await ws.send_json(
+                            {"id": 3, "type": "verkada/stream", "entity_id": plate_camera.entity_id}
+                        )
+                        assert not (await ws.receive_json())["success"], (
+                            "Denied user opened a live proxy"
+                        )
                 assert await hass.config_entries.async_unload(entry.entry_id)
                 assert entry.entry_id not in hass.data["verkada"]
+                assert not hass.data["verkada_live"].sessions
                 print(
                     "PASS: actual HA setup/options/reload, entities, source failures, event history, HMAC/replay, websocket admin permissions, real HLS playback from synthetic footage, unload"
                 )

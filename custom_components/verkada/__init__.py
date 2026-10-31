@@ -18,6 +18,7 @@ PLATFORMS = [Platform.CAMERA, Platform.BINARY_SENSOR, Platform.SENSOR, Platform.
 
 
 async def async_setup(hass, config):
+    from .live import LiveView, ws_stream  # noqa: PLC0415
     from .websocket import async_register  # noqa: PLC0415
 
     hass.data.setdefault(DOMAIN, {})
@@ -27,6 +28,11 @@ async def async_setup(hass, config):
         ]
     )
     async_register(hass)
+    hass.data["verkada_live"] = LiveView(hass)
+    hass.http.register_view(hass.data["verkada_live"])
+    from homeassistant.components import websocket_api  # noqa: PLC0415
+
+    websocket_api.async_register_command(hass, ws_stream)
     frontend.add_extra_js_url(hass, f"/verkada_static/verkada-cards.js?v={VERSION}")
     return True
 
@@ -110,6 +116,7 @@ async def _async_reload(hass, entry):
 async def async_unload_entry(hass, entry):
     if await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hub = hass.data[DOMAIN].pop(entry.entry_id)
+        hass.data["verkada_live"].discard(hub)
         for stream in hub.playbacks.values():
             await stream.stop()
         frontend.async_remove_panel(hass, "verkada-" + entry.entry_id)

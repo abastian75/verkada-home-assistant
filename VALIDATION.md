@@ -1,4 +1,24 @@
-# Validation — 0.2.4
+# Validation — 0.2.5
+
+## Live passthrough and security
+
+Longer native HEVC tests exposed an additional FFmpeg-reader failure: Side Yard
+ended after 41.96 video seconds, although repeated HTTP playlist requests continued
+to advance their media sequence. Changing FFmpeg's persistent-connection and
+segment-retry options did not fix it. Custom live views now relay original HLS
+playlists, initialization fragments, keys and segments through HA to HLS.js,
+avoiding that reader/remuxer. Ordinary HA camera cards retain HA's stream path.
+
+The authenticated `verkada/stream` command checks existing camera read permission
+before issuing an unguessable, camera-scoped playback session. Resource URLs are
+kept server-side, rewritten to opaque IDs, restricted to the configured Verkada
+streaming host/path, and bounded to 256 resources per session / 64 sessions. Sessions
+expire after five idle minutes and are discarded on integration unload. Redirects
+are rejected; responses are size-limited; only Range headers are forwarded.
+
+Actual isolated HA websocket/HTTP tests cover ordinary-user access, rejection of
+a no-access user, JWT-free rewritten playlists (including MAP URIs), binary/range
+responses, invalid/expired sessions, untrusted playlist hosts and unload cleanup.
 
 ## Native live-video fix
 

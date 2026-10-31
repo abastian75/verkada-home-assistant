@@ -1,7 +1,7 @@
 """Constants for the unofficial Verkada integration."""
 
 DOMAIN = "verkada"
-VERSION = "0.2.4"
+VERSION = "0.2.5"
 REGIONS = {
     "us": "https://api.verkada.com",
     "us2": "https://api.oh.verkada.com",

@@ -7,7 +7,7 @@ export function createHass(){
  const params=new URL(location.href).searchParams,video=params.get("video");window.fixtureCalls=[];
  return {states:Object.fromEntries(cameras.map(c=>[c.entity_id,{state:c.status==="Live"?"idle":"unavailable",attributes:{friendly_name:c.name,entity_picture:picture,...(c.plate_tracking?{plate_tracking:true,last_plate:params.has("empty")?null:"TEST123",plate_last_seen:now-30}:{})}}])),hassUrl:url=>url,callWS:async msg=>{
   window.fixtureCalls.push(msg);
-  if(msg.type==="camera/stream"||msg.action==="playback"){if(video)return {url:video};throw new Error("Synthetic fixture: real video is tested separately in the HA runtime.");}
+  if(msg.type==="verkada/stream"||msg.action==="playback"){if(video)return {url:video};throw new Error("Synthetic fixture: real video is tested separately in the HA runtime.");}
   if(msg.action==="stop")return {};
   if(params.has("denied"))throw new Error("You do not have access to this camera.");
   if(msg.action==="list")return {entries:[{entry_id:"synthetic-entry",name:"Verkada",cameras}]};

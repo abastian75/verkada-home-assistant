@@ -1,5 +1,5 @@
-import { attachVideo, clearVideo } from "./player.js?v=0.2.4";
-import { plateText } from "./plate.js?v=0.2.4";
+import { attachVideo, clearVideo } from "./player.js?v=0.2.5";
+import { plateText } from "./plate.js?v=0.2.5";
 /* Native HA panel: no build step, external scripts or credentials in the browser. */
 class VerkadaPanel extends HTMLElement {
   constructor() {
@@ -133,7 +133,7 @@ class VerkadaPanel extends HTMLElement {
           const startLive=async()=>{
             button.hidden=true;button.disabled=true;state.textContent="Connecting live video…";
             try {
-              const result=await this._hass.callWS({type:"camera/stream",entity_id:camera.entity_id,format:"hls"});
+              const result=await this._hass.callWS({type:"verkada/stream",entity_id:camera.entity_id});
               if(this._tab!=="live"||!wrapper.isConnected)return;
               image.hidden=true;video.hidden=false;video.poster=picture?this._hass.hassUrl(picture):"";
               await attachVideo(video,this._hass.hassUrl(result.url),error=>{state.textContent=error.message;button.hidden=false;},()=>{state.textContent="Live";});

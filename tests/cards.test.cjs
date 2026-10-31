@@ -17,7 +17,7 @@ const path=require('node:path');
  await events.getByText('Person in driveway',{exact:true}).waitFor();
  assert.equal(await events.locator('img').count(),0,'Event markup executed');
  assert.equal(await page.evaluate(()=>window.bad),undefined);
- assert.ok(await page.evaluate(()=>window.fixtureCalls.some(c=>c.type==='camera/stream')),'Camera did not start automatically');
+ assert.ok(await page.evaluate(()=>window.fixtureCalls.some(c=>c.type==='verkada/stream')),'Camera did not start automatically');
  await camera.getByRole('button',{name:'Retry',exact:true}).waitFor();
  await lpr.getByRole('button',{name:'Watch recording for TEST123'}).click();
  await lpr.getByRole('alert').filter({hasText:'Synthetic fixture'}).waitFor();

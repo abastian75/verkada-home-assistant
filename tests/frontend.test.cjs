@@ -10,7 +10,7 @@ const path = require('node:path');
   await page.getByText('Driveway · Live',{exact:true}).waitFor();
   await page.getByText(/Last plate: TEST123 · Last seen/).waitFor();
   assert.equal(await page.locator('[data-plate-entity="camera.synthetic_gate"]').isVisible(),false,'Non-LPR camera shows a plate caption');
-  await page.waitForFunction(()=>window.fixtureCalls.some(c=>c.type==='camera/stream'));
+  await page.waitForFunction(()=>window.fixtureCalls.some(c=>c.type==='verkada/stream'));
   assert.equal(await page.getByRole('button',{name:'Live view',exact:true}).count(),0);
   const output=process.env.UI_OUTPUT;
   if(output)await page.screenshot({path:path.join(output,'desktop-live.png'),fullPage:true});
