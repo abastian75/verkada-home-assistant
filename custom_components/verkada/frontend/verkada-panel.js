@@ -1,3 +1,4 @@
+import { attachVideo, clearVideo } from "./player.js?v=0.2.0";
 /* Native HA panel: no build step, external scripts or credentials in the browser. */
 class VerkadaPanel extends HTMLElement {
   constructor() {
@@ -48,7 +49,7 @@ class VerkadaPanel extends HTMLElement {
       <header><ha-menu-button></ha-menu-button><h1>Verkada</h1><button id="settings">Configure</button></header>
       <main><nav aria-label="Verkada views"><button data-tab="live" aria-selected="true">Live cameras</button><button data-tab="events" aria-selected="false">Events & recordings</button><button data-tab="setup" aria-selected="false">Connection</button></nav>
       <div id="message" role="alert"></div><div id="health" role="status">Connecting to Home Assistant…</div>
-      <section id="live"><h2>Live cameras</h2><p class="muted">Select Live view to start a stream. Still thumbnails can be up to five minutes old.</p><div id="cameras"></div></section>
+      <section id="live"><h2>Live cameras</h2><p class="muted">Live video starts automatically. Camera snapshots remain visible while streams connect.</p><div id="cameras"></div></section>
       <section id="events" hidden><h2>Events & recordings</h2>
         <div class="filters"><label>Camera<select id="camera" aria-label="Camera"><option value="">All cameras</option></select></label><label>Source<select id="source" aria-label="Source"><option value="">All saved events</option><option value="alert">Camera alerts</option><option value="lpr">Native LPR</option><option value="helix">Helix</option><option value="webhook">Other webhooks</option></select></label><label>Search plate or event<input id="query" type="search" maxlength="200" placeholder="Plate, event or camera"></label></div>
         <div class="filters"><label>From<input id="from" type="datetime-local"></label><label>To<input id="to" type="datetime-local"></label></div>
@@ -104,7 +105,7 @@ class VerkadaPanel extends HTMLElement {
   async _renderCameras() {
     if (!this._data || this._tab!=="live") return;
     const target=this.shadowRoot.querySelector("#cameras");
-    const signature=JSON.stringify(this._data.cameras.map(c=>[c.camera_id,c.entity_id,c.name]));
+    const signature=JSON.stringify(this._data.cameras.map(c=>[c.camera_id,c.entity_id,c.name,c.status]));
     if (target.dataset.signature===signature && target.childElementCount) return;
     this._clearVideos("#cameras video");target.dataset.signature=signature; target.replaceChildren();
     if (!this._data.cameras.length) { target.textContent="No cameras found. Check API permissions and camera selection in integration options."; return; }
@@ -119,15 +120,23 @@ class VerkadaPanel extends HTMLElement {
           const picture=this._hass.states[camera.entity_id]?.attributes.entity_picture;
           if (picture) image.src=this._hass.hassUrl(picture);
           const video=document.createElement("video");video.hidden=true;video.controls=true;video.muted=true;video.autoplay=true;video.playsInline=true;
-          const button=document.createElement("button");button.textContent="Live view";
-          button.onclick=async()=>{
-            if (!video.hidden) {this._clearVideo(video);video.hidden=true;image.hidden=false;button.textContent="Live view";return;}
-            button.disabled=true;
-            try {const result=await this._hass.callWS({type:"camera/stream",entity_id:camera.entity_id,format:"hls"});image.hidden=true;video.hidden=false;await this._attachVideo(video,this._hass.hassUrl(result.url));button.textContent="Stop live view";}
-            catch(error) {this._clearVideo(video);video.hidden=true;image.hidden=false;this._error(error);}
+          const state=document.createElement("p");state.className="muted";state.setAttribute("role","status");state.textContent="Connecting live video…";
+          const button=document.createElement("button");button.textContent="Retry";button.hidden=true;
+          const startLive=async()=>{
+            button.hidden=true;button.disabled=true;state.textContent="Connecting live video…";
+            try {
+              const result=await this._hass.callWS({type:"camera/stream",entity_id:camera.entity_id,format:"hls"});
+              if(this._tab!=="live"||!wrapper.isConnected)return;
+              image.hidden=true;video.hidden=false;video.poster=picture?this._hass.hassUrl(picture):"";
+              await attachVideo(video,this._hass.hassUrl(result.url),error=>{state.textContent=error.message;button.hidden=false;},()=>{state.textContent="Live";});
+            } catch(error) {clearVideo(video);video.hidden=true;image.hidden=false;state.textContent=error.message;button.hidden=false;}
             finally {button.disabled=false;}
           };
-          wrapper.append(image,video,button);
+          button.onclick=startLive;
+          wrapper.append(image,video,state,button);
+          if(["live","online"].includes((camera.status||"").toLowerCase()))setTimeout(startLive,0);
+          else {state.textContent="Camera offline";button.hidden=false;}
+
         }
         target.append(wrapper);
       }
@@ -188,22 +197,9 @@ class VerkadaPanel extends HTMLElement {
       target.replaceChildren(label,player,close);await this._attachVideo(player,this._hass.hassUrl(result.url));target.scrollIntoView({behavior:"smooth",block:"center"});
     } catch(error) {target.replaceChildren();this._error(error);}
   }
-  _clearVideo(video) {video._hls?.destroy();video._hls=null;video.pause();video.removeAttribute("src");video.load();}
-  _clearVideos(selector="video") {this.shadowRoot.querySelectorAll(selector).forEach(video=>this._clearVideo(video));}
-  async _attachVideo(video,url) {
-    if (video.canPlayType("application/vnd.apple.mpegurl")) video.src=url;
-    else {
-      if (!VerkadaPanel._hlsLoading) VerkadaPanel._hlsLoading=new Promise((resolve,reject)=>{
-        const script=document.createElement("script");script.src=new URL("./vendor/hls.light.min.js",import.meta.url).href;script.onload=resolve;script.onerror=()=>reject(new Error("Video player could not load. Refresh the page."));document.head.append(script);
-      });
-      await VerkadaPanel._hlsLoading;
-      if (!window.Hls?.isSupported()) throw new Error("This browser cannot play HLS video. Try a current Chrome, Edge, Firefox or Safari browser.");
-      const hls=new window.Hls({maxBufferLength:30});video._hls=hls;
-      hls.on(window.Hls.Events.ERROR,(_,data)=>{if(data.fatal)this._error(new Error("Video could not load. Check streaming permissions, connectivity and recording retention."));});
-      hls.loadSource(url);hls.attachMedia(video);
-    }
-    video.play().catch(()=>{});
-  }
+  _clearVideo(video) {clearVideo(video);}
+  _clearVideos(selector="video") {this.shadowRoot.querySelectorAll(selector).forEach(clearVideo);}
+  async _attachVideo(video,url) {await attachVideo(video,url,error=>this._error(error));}
   _renderSetup() {
     const data=this._data,target=this.shadowRoot.querySelector("#sources");target.replaceChildren();
     for (const [name,status] of Object.entries(data.sources)) { const paragraph=document.createElement("p");paragraph.textContent=`${name}: ${status.state}${status.message ? " — "+status.message : ""} · Last success ${this._time(status.last_success)}`;target.append(paragraph); }

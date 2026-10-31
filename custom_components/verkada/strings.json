@@ -84,18 +84,20 @@
           "helix_plate_attribute": "Helix plate attribute",
           "webhook_secret": "Webhook shared secret",
           "history_days": "Local history retention (days)",
-          "high_resolution": "High resolution video and thumbnails"
+          "high_resolution": "High resolution video and thumbnails",
+          "helix_camera_ids": "Helix plate cameras"
         },
         "data_description": {
           "camera_ids": "Empty includes all cameras, including newly discovered cameras.",
           "poll_interval": "30\u2013900 seconds. Cloud event polling and camera health share this interval.",
           "alerts": "Enable if the API key has camera alert read permission. Webhooks work independently.",
-          "lpr_camera_ids": "Select only cameras already enabled for LPR in Command.",
+          "lpr_camera_ids": "Select only cameras already enabled for LPR in Command. Loads the last 24 hours once; plate sensors are created only for selected plate sources.",
           "helix_event_type": "Leave blank to disable Helix polling.",
           "helix_plate_attribute": "Exact custom attribute containing the plate number, such as license_plate.",
           "webhook_secret": "Optional. At least 16 characters; configure the exact same secret in Command. Blank disables webhooks.",
           "history_days": "1\u201330 days, capped at 1,000 events. This does not change Verkada video retention.",
-          "high_resolution": "Uses more bandwidth; affects newly opened streams."
+          "high_resolution": "Uses more bandwidth; affects newly opened streams.",
+          "helix_camera_ids": "Cameras whose existing Helix events contain plate data. Adds plate sensors without native LPR polling."
         }
       }
     },

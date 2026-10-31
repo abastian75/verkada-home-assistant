@@ -136,7 +136,9 @@ class VerkadaOptionsFlow(config_entries.OptionsFlow):
         choices = (
             {cid: camera.get("name", cid) for cid, camera in hub.inventory.items()} if hub else {}
         )
-        for cid in options.get("camera_ids", []) + options["lpr_camera_ids"]:
+        for cid in (
+            options.get("camera_ids", []) + options["lpr_camera_ids"] + options["helix_camera_ids"]
+        ):
             choices.setdefault(cid, cid)
         selection = selector.SelectSelector(
             selector.SelectSelectorConfig(
@@ -156,6 +158,9 @@ class VerkadaOptionsFlow(config_entries.OptionsFlow):
                     vol.Required("alerts", default=options["alerts"]): bool,
                     vol.Optional("lpr_camera_ids", default=options["lpr_camera_ids"]): selection,
                     vol.Optional("helix_event_type", default=options["helix_event_type"]): str,
+                    vol.Optional(
+                        "helix_camera_ids", default=options["helix_camera_ids"]
+                    ): selection,
                     vol.Optional(
                         "helix_plate_attribute", default=options["helix_plate_attribute"]
                     ): str,

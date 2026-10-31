@@ -25,6 +25,11 @@ jobs:
           "$RUNNER_TEMP/browser/node_modules/.bin/playwright" install --with-deps chromium
           python -m http.server 8769 --bind 127.0.0.1 &
           node tests/frontend.test.cjs
+          node tests/cards.test.cjs
+          sudo apt-get install -y ffmpeg
+          mkdir -p tests/.video-fixture
+          ffmpeg -hide_banner -loglevel error -y -f lavfi -i testsrc=size=320x180:rate=10 -t 12 -pix_fmt yuv420p -c:v libx264 -g 10 -sc_threshold 0 -f hls -hls_time 1 -hls_list_size 0 tests/.video-fixture/source.m3u8
+          node tests/player.test.cjs
       - name: Contract tests in the official HA runtime
         run: docker run --rm --network none -v "$PWD:/repo:ro" -w /repo ghcr.io/home-assistant/home-assistant:2026.10.4 python tests/test_core.py
       - name: Isolated Home Assistant smoke test

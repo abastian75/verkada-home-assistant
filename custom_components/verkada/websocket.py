@@ -19,6 +19,32 @@ from .models import normalize_event
 @callback
 def async_register(hass):
     websocket_api.async_register_command(hass, ws_dashboard)
+    from .cards import ws_cards  # noqa: PLC0415
+
+    websocket_api.async_register_command(hass, ws_cards)
+
+
+async def async_stop_playback(hub, owner):
+    stream = hub.playbacks.pop(owner, None)
+    if stream:
+        await stream.stop()
+
+
+async def async_start_playback(hass, hub, owner, cid, start, end):
+    if not cid or not (0 < start < end <= time.time() and end - start <= 3600):
+        raise HomeAssistantError("Choose a camera and a past interval of at most one hour.")
+    for key, stream in list(hub.playbacks.items()):
+        if not stream.outputs():
+            hub.playbacks.pop(key, None)
+    if owner not in hub.playbacks and len(hub.playbacks) >= 8:
+        raise HomeAssistantError("Close another recorded playback before starting a new one.")
+    url = await hub.api.stream_url(cid, high=hub.options["high_resolution"], start=start, end=end)
+    await async_stop_playback(hub, owner)
+    stream = create_stream(hass, url, {}, DynamicStreamSettings(), stream_label="verkada_history")
+    stream.add_provider("hls")
+    hub.playbacks[owner] = stream
+    await stream.start()
+    return stream.endpoint_url("hls")
 
 
 @websocket_api.websocket_command(
@@ -50,28 +76,13 @@ async def ws_dashboard(hass, connection, msg):
         return
     try:
         if action == "stop":
-            stream = hub.playbacks.pop(connection.user.id, None)
-            if stream:
-                await stream.stop()
+            await async_stop_playback(hub, connection.user.id)
             connection.send_result(msg["id"], {})
             return
         if action == "playback":
             start, end = msg["start"], msg["end"]
-            if not cid or not (0 < start < end <= time.time() and end - start <= 3600):
-                raise HomeAssistantError("Choose a camera and a past interval of at most one hour.")
-            url = await hub.api.stream_url(
-                cid, high=hub.options["high_resolution"], start=start, end=end
-            )
-            old = hub.playbacks.pop(connection.user.id, None)
-            if old:
-                await old.stop()
-            stream = create_stream(
-                hass, url, {}, DynamicStreamSettings(), stream_label="verkada_history"
-            )
-            stream.add_provider("hls")
-            hub.playbacks[connection.user.id] = stream
-            await stream.start()
-            connection.send_result(msg["id"], {"url": stream.endpoint_url("hls")})
+            url = await async_start_playback(hass, hub, connection.user.id, cid, start, end)
+            connection.send_result(msg["id"], {"url": url})
             return
         if action == "search":
             start, end = msg["start"], msg["end"]

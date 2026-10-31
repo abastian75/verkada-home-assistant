@@ -23,6 +23,7 @@ class VerkadaCoordinator(DataUpdateCoordinator):
         self.events = []
         self.status = {}
         self.cursors = {}
+        self.seeded_lpr = set()
         self.last_event = None
         self.last_webhook = None
         self.last_poll = None
@@ -49,7 +50,22 @@ class VerkadaCoordinator(DataUpdateCoordinator):
                 and isinstance(e.get("timestamp"), (int, float))
             ]
             self.cursors = saved.get("cursors", {})
+            self.seeded_lpr = set(saved.get("seeded_lpr", []))
         self.prune()
+
+    @property
+    def plate_camera_ids(self):
+        ids = set(self.options["lpr_camera_ids"])
+        if self.options["helix_event_type"]:
+            ids.update(self.options["helix_camera_ids"])
+        return ids & set(self.cameras_by_id)
+
+    def saved_history(self):
+        return {
+            "events": self.events,
+            "cursors": self.cursors,
+            "seeded_lpr": sorted(self.seeded_lpr),
+        }
 
     def prune(self):
         cutoff = time.time() - self.options["history_days"] * 86400
@@ -73,20 +89,25 @@ class VerkadaCoordinator(DataUpdateCoordinator):
                     "verkada_event", {"entry_id": self.entry.entry_id, **event}
                 )
         self.prune()
-        self.store.async_delay_save(lambda: {"events": self.events, "cursors": self.cursors}, 5)
+        self.store.async_delay_save(self.saved_history, 5)
 
     async def _source(self, key, fetch, normalize):
         end = int(time.time())
         initial = key not in self.cursors
         requested_start = int(self.cursors.get(key, end - 300)) - 10
+        seed_lpr = key.startswith("lpr:") and key not in self.seeded_lpr
+        if seed_lpr:
+            requested_start = end - 86400
         start = max(requested_start, end - 86400)
         try:
             rows = await fetch(start, end)
             events = [normalize(row) for row in rows]
             if any(event is None for event in events):
                 raise VerkadaError("Response contains invalid events; cursor was not advanced")
-            self.add_events(events, notify=not initial)
+            self.add_events(events, notify=not (initial or seed_lpr))
             self.cursors[key] = end
+            if seed_lpr:
+                self.seeded_lpr.add(key)
             self.status[key] = {"state": "ok", "last_success": end}
             if requested_start < start:
                 self.status[key].update(

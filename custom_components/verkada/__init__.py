@@ -27,6 +27,7 @@ async def async_setup(hass, config):
         ]
     )
     async_register(hass)
+    frontend.add_extra_js_url(hass, f"/verkada_static/verkada-cards.js?v={VERSION}")
     return True
 
 
@@ -112,7 +113,7 @@ async def async_unload_entry(hass, entry):
         for stream in hub.playbacks.values():
             await stream.stop()
         frontend.async_remove_panel(hass, "verkada-" + entry.entry_id)
-        await hub.store.async_save({"events": hub.events, "cursors": hub.cursors})
+        await hub.store.async_save(hub.saved_history())
         return True
     return False
 

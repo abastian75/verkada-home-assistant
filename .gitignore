@@ -8,3 +8,4 @@ __pycache__/
 .env
 secrets.yaml
 configuration.yaml
+tests/.video-fixture/

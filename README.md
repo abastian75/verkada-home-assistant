@@ -53,7 +53,7 @@ Manual installation: copy `custom_components/verkada` into HA's
 |---|---|
 | Native HA setup | Config flow, options, credential replacement, reauthentication, multiple organizations |
 | Camera devices | Discovered cameras, HA area suggestions from site names, model/serial metadata |
-| Live video | Standard HA camera entities, HA-proxied HLS, sidebar Live view buttons, expiring-token renewal |
+| Live video | Automatically playing sidebar streams, standard HA camera entities, HA-proxied HLS and token renewal |
 | Camera health | Connected binary sensor and firmware-status sensor per camera |
 | Alerts | Camera alert polling, optional signed incoming webhooks, source-health diagnostics |
 | Native LPR | Opt-in per-camera polling, plate history/images, latest plate and last-seen sensors |
@@ -62,6 +62,59 @@ Manual installation: copy `custom_components/verkada` into HA's
 | Dashboard | Responsive sidebar panel with camera selection, event/plate text filter, date range and cloud search |
 | Automations | `verkada_event` bus events for new records and an HA latest-event entity |
 | Local history | Up to 1,000 events, 1–30 days (default 7), persisted on HA and removed when the integration is deleted |
+| Dashboard cards | Camera, Events and LPR cards with visual editors; bundled and loaded automatically |
+
+## Dashboard cards
+
+After updating the integration, **restart HA and reload the browser**. Cards are
+bundled with the integration; no second HACS repository or manual dashboard
+resource is needed.
+
+Open your dashboard → **Edit dashboard → Add card** and search **Verkada**:
+
+- **Verkada Camera**: choose a camera. Live video starts automatically, with a
+  thumbnail while connecting and a Retry control for failures.
+- **Verkada Events**: choose the integration and optionally a camera, title and
+  row count. Shows recent alerts; **Watch** plays the associated recording.
+- **Verkada LPR**: choose a configured plate camera or all cameras. Shows the
+  latest plate, time, history and recordings. The camera selector includes only
+  cameras configured as plate sources.
+
+All three have graphical editors. Camera streaming uses HA's normal camera
+permissions. The Events/LPR data endpoint filters both events and playback by
+the user's camera-read permissions; it does not expose API keys, webhook URLs
+or unrelated organization events. At most eight simultaneous historical streams
+are allowed per integration; each card stops its own recording independently.
+
+If the cards do not appear, fully reload the HA page after the integration restart.
+For YAML dashboards the types are `custom:verkada-camera-card` (set `entity`),
+`custom:verkada-events-card` and `custom:verkada-lpr-card` (set `entry_id` if you
+have multiple organizations). Visual editing is recommended so IDs are selected
+for you.
+
+## Why Last plate can be unknown
+
+`unknown` means the integration has no retained plate record for that camera; it
+does not mean a vehicle is absent. The older release created plate entities for
+all cameras even when plate collection was disabled. From 0.2.0 onward:
+
+1. In integration options, select **LPR cameras** for cameras already running
+   native LPR in Command. The first successful sync loads the previous **24 hours**
+   once (also when upgrading), without firing automations for historical records.
+2. For plates supplied by an external Helix source, set the event type/plate
+   attribute and select **Helix plate cameras**. This creates plate entities
+   without incorrectly polling the native LPR endpoint for those cameras.
+3. Last plate / Plate last seen entities are created only for configured plate
+   sources. Older unwanted entities are disabled and hidden by the integration;
+   their names, IDs and recorder history are preserved. Selecting that camera
+   later restores integration-hidden entities without overriding user disabling.
+
+The camera inventory API does not supply a documented definitive LPR-mode flag.
+The integration therefore uses explicit source selection, not camera model/name
+guesses. If no plate was seen in the backfill window, the HA sensor remains
+unknown until a detection is collected; the LPR card explains the empty state.
+Check **Event sources** if polling fails; missing permissions are not treated as
+an empty successful result.
 
 This release deliberately excludes door unlock, alarm arm/disarm, credential/user
 management, environmental sensor polling and a full Command-style recording
@@ -83,6 +136,9 @@ Integrations**. This integration uses the documented APIs only.
 - Camera alerts: alert read access (disable alert polling in options if unused).
 - LPR: LPR read access; select only cameras already running in LPR mode.
 - Helix: permission to search existing Helix events and an existing event type UID.
+  Verkada's generic POST rule requires Read/Write; the search uses POST but this
+  integration never creates or changes Helix records. A narrower read-only
+  allowance for this search has not been verified with a real account.
 
 Keys are stored in HA's config entries, never shipped to GitHub or sent to the
 browser. Protect HA backups as they can contain these credentials. No password,
@@ -94,8 +150,8 @@ permissions are checked when those features are used, not assumed from setup.
 
 ## Dashboard and recordings
 
-- **Live cameras:** cloud thumbnails initially; select **Live view** to start each
-  stream. Stop or leave the tab to stop the browser receiving video. HA's stream
+- **Live cameras:** online cameras start live video automatically; thumbnails
+  remain as posters while connecting. Leaving the tab stops browser playback. HA's stream
   component retires idle stream workers. Camera entities also work in HA cards.
 - **Events & recordings:** filter saved events by source/camera/text/time.
   Select Camera alerts, Native LPR or Helix and **Search Verkada history** to fetch
@@ -149,7 +205,7 @@ Webhooks do not establish full New Alarms sensor/partition state or arm/disarm c
 ## Data freshness and limits
 
 Polling defaults to 60 seconds (30–900 configurable). New sources initially load
-the last five minutes without emitting automations for that initial import.
+the last five minutes; native LPR loads 24 hours once. Neither initial import emits automations.
 Subsequent polls overlap by ten seconds and deduplicate. Saved cursors permit
 up to 24 hours of automatic backfill; longer gaps are flagged as partial when
 first recovered and require manual searches if older events are needed.

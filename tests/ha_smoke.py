@@ -15,11 +15,13 @@ from aiohttp import ClientSession, ThreadedResolver, web
 from homeassistant import bootstrap, loader
 from homeassistant.components.camera import DATA_COMPONENT
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 
 logging.basicConfig(level=logging.WARNING)
 
 ORG = "11111111-1111-4111-8111-111111111111"
 CAM = "22222222-2222-4222-8222-222222222222"
+CAM2 = "33333333-3333-4333-8333-333333333333"
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -61,6 +63,7 @@ async def main():
 
             now = int(time.time())
             permissions = {"alerts": True}
+            lpr_ranges = []
 
             async def fake_request(self, method, path, **kwargs):
                 if path == "/token":
@@ -76,7 +79,8 @@ async def main():
                                 "site": "Synthetic home",
                                 "serial": "TEST-001",
                                 "firmware": "Up to date",
-                            }
+                            },
+                            {"camera_id": CAM2, "name": "Synthetic non-LPR", "status": "Live"},
                         ]
                     }
                 if path.endswith("/alerts"):
@@ -93,6 +97,8 @@ async def main():
                         ]
                     }
                 if path.endswith("lpr/images"):
+                    params = kwargs["params"]
+                    lpr_ranges.append(params["end_time"] - params["start_time"])
                     return {
                         "camera_id": CAM,
                         "detections": [{"license_plate": "TEST123", "timestamp": now - 10}],
@@ -140,8 +146,19 @@ async def main():
                 await hass.async_start()
                 await hass.async_block_till_done()
                 hub = entry.runtime_data
-                assert len(hub.data) == 1 and len(hub.events) == 1
+                assert len(hub.data) == 2 and len(hub.events) == 1
                 assert hub.last_event is None, "Historical initial import fired a new event"
+                registry = er.async_get(hass)
+                assert (
+                    registry.async_get_entity_id(
+                        "sensor", "verkada", f"{entry.unique_id}_{CAM}_last_plate"
+                    )
+                    is None
+                )
+                legacy = registry.async_get_or_create(
+                    "sensor", "verkada", f"{entry.unique_id}_{CAM2}_last_plate", config_entry=entry
+                )
+                registry.async_update_entity(legacy.entity_id, name="Preserved custom name")
                 camera = next(
                     c
                     for c in hass.data[DATA_COMPONENT].entities
@@ -171,6 +188,18 @@ async def main():
                 hub = entry.runtime_data
                 assert len(hub.events) == 3, [e["source"] for e in hub.events]
                 assert {e["plate"] for e in hub.events if e["plate"]} == {"TEST123", "HELIX123"}
+                assert lpr_ranges[0] == 86400, "Initial LPR sync did not backfill a day"
+                assert hub.last_event is None, "LPR backfill emitted an automation event"
+                retired = registry.async_get(legacy.entity_id)
+                assert retired.disabled_by == er.RegistryEntryDisabler.INTEGRATION
+                assert retired.hidden_by == er.RegistryEntryHider.INTEGRATION
+                assert retired.name == "Preserved custom name"
+                assert (
+                    registry.async_get_entity_id(
+                        "sensor", "verkada", f"{entry.unique_id}_{CAM}_last_plate"
+                    )
+                    is not None
+                )
                 permissions["alerts"] = False
                 await hub.async_refresh()
                 assert hub.last_update_success and hub.status["alerts"]["state"] == "error"
@@ -324,6 +353,61 @@ async def main():
                         )
                         assert not (await ws.receive_json())["success"], (
                             "Non-admin history access accepted"
+                        )
+                        await ws.send_json({"id": 2, "type": "verkada/cards", "action": "list"})
+                        value = await ws.receive_json()
+                        assert (
+                            value["success"] and len(value["result"]["entries"][0]["cameras"]) == 2
+                        )
+                        await ws.send_json(
+                            {
+                                "id": 3,
+                                "type": "verkada/cards",
+                                "entry_id": entry.entry_id,
+                                "action": "status",
+                                "camera_id": CAM,
+                                "source": "lpr",
+                                "limit": 1,
+                            }
+                        )
+                        value = await ws.receive_json()
+                        assert value["success"] and len(value["result"]["events"]) == 1
+                        assert "webhook_url" not in value["result"]
+                        assert "SYNTHETIC_KEY" not in json.dumps(value)
+                        await ws.send_json(
+                            {
+                                "id": 4,
+                                "type": "verkada/cards",
+                                "entry_id": entry.entry_id,
+                                "action": "playback",
+                                "camera_id": "unauthorized-camera",
+                                "start": now - 120,
+                                "end": now - 60,
+                            }
+                        )
+                        assert not (await ws.receive_json())["success"]
+                    denied = await hass.auth.async_create_user("Synthetic no-access", group_ids=[])
+                    denied_refresh = await hass.auth.async_create_refresh_token(
+                        denied, client_id="http://localhost/"
+                    )
+                    denied_access = hass.auth.async_create_access_token(denied_refresh)
+                    async with session.ws_connect("http://127.0.0.1:8123/api/websocket") as ws:
+                        await ws.receive_json()
+                        await ws.send_json({"type": "auth", "access_token": denied_access})
+                        await ws.receive_json()
+                        await ws.send_json({"id": 1, "type": "verkada/cards", "action": "list"})
+                        value = await ws.receive_json()
+                        assert value["success"] and value["result"]["entries"] == []
+                        await ws.send_json(
+                            {
+                                "id": 2,
+                                "type": "verkada/cards",
+                                "action": "status",
+                                "entry_id": entry.entry_id,
+                            }
+                        )
+                        assert not (await ws.receive_json())["success"], (
+                            "Denied user read plate history"
                         )
                 assert await hass.config_entries.async_unload(entry.entry_id)
                 assert entry.entry_id not in hass.data["verkada"]

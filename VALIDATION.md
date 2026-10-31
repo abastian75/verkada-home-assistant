@@ -1,4 +1,24 @@
-# Validation — 0.1.0
+# Validation — 0.2.0
+
+## Added for 0.2.0
+
+- Native LPR initial/migration sync checks 24 hours once, without historical
+  automation events. The first setup creates no plate sensors until a plate
+  source is selected. Legacy non-LPR plate entities are disabled/hidden while
+  retaining IDs, custom names and history.
+- Actual HA runtime tests verify non-admin card access through existing camera
+  permissions and rejection of a user with no camera access; card data excludes
+  webhook URLs/credentials and playback rejects unauthorized camera IDs.
+- Three bundled cards register in the picker and provide graphical editors.
+  Browser checks cover camera selection, source filtering, recording errors,
+  empty/denied states, XSS-safe rendering, and light/dark/mobile layouts.
+- A browser regression advertises native HLS support, then proves the shared
+  MSE player still decodes actual synthetic HLS, starts without a Live view
+  click in the sidebar/camera card, and plays/closes a recording in the LPR card.
+- Real HA inspection of the older release found LPR was not configured; enabled
+  polling for the intended LPR camera only. Real camera discovery/thumbnails work.
+  Reproduced the old grey/paused live-video pane; updated-player verification
+  against the real feeds is still pending at this point.
 
 ## Passed locally
 
