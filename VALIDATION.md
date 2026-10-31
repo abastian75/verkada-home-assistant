@@ -1,5 +1,23 @@
 # Validation — 0.2.5
 
+## Verified on the installed HA 2026.10.4 system
+
+- Five real low-resolution HEVC Camera cards advanced together across a 208-second
+  observation window: playback counters increased from about 28 seconds to
+  233–236 seconds, with all five unpaused and ready at the final sample. This
+  exceeded the old 4–70-second cutoff windows without a manual retry.
+- Opened the original Verkada sidebar afterwards: all five cameras automatically
+  started and advanced past 79 seconds. The LPR tile and Camera card both displayed
+  the latest real plate and its timestamp; other cameras omitted the caption.
+- A real HEVC recording played in the browser through the LPR card. Cold-start
+  registration and actual card rendering were also verified after the registry fix.
+- The user independently updated/restarted HA during the earlier test. That run
+  was interrupted and is not counted as a playback pass. Subsequent checks used
+  the resulting HA 2026.10.4 installation.
+
+Private screenshots remain outside the public repository. These are bounded
+desktop checks, not Companion-device acceptance or an all-day reliability test.
+
 ## Live passthrough and security
 
 Longer native HEVC tests exposed an additional FFmpeg-reader failure: Side Yard
@@ -78,9 +96,9 @@ HEVC support and the live compatibility option.
   HA's HLS proxy and the official HA decoder decoded HEVC at 3840×2160. Two plate
   sensors were active; eight legacy non-LPR plate sensors were disabled/hidden.
 - Created and read-back verified a separate example Verkada Cards dashboard on
-  the user's HA, without modifying existing dashboards. Final real-browser card
-  and HEVC rendering checks were blocked by a stalled Chrome automation connection;
-  they are not claimed as passed. Synthetic card/editor/browser checks passed.
+  the user's HA, without modifying existing dashboards. The 0.2.1 real-browser card
+  and HEVC checks were initially blocked; the later checks above supersede that
+  pending state. Synthetic card/editor/browser checks also passed.
 
 ## Added for 0.2.0
 

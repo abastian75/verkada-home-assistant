@@ -99,7 +99,7 @@
           "history_days": "1–30 days, capped at 1,000 events. This does not change Verkada video retention.",
           "high_resolution": "Uses more bandwidth; affects newly opened streams.",
           "helix_camera_ids": "Cameras whose existing Helix events contain plate data. Adds plate sensors without native LPR polling.",
-          "live_codec": "HEVC uses native camera video. H.264 improves browser compatibility but requires Verkada conversion, which may stop early on some feeds."
+          "live_codec": "HEVC uses native camera video. H.264 improves browser compatibility but requires Verkada conversion."
         }
       }
     },
