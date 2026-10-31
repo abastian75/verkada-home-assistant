@@ -8,7 +8,7 @@ const path = require('node:path');
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto('http://127.0.0.1:8769/tests/frontend_fixture.html');
   await page.getByText('Driveway · Live',{exact:true}).waitFor();
-  await page.getByText(/Last plate: TEST123 · Last seen/).waitFor();
+  await page.getByText(/Last plate: TEST123/).waitFor();
   assert.equal(await page.locator('[data-plate-entity="camera.synthetic_gate"]').isVisible(),false,'Non-LPR camera shows a plate caption');
   await page.waitForFunction(()=>window.fixtureCalls.some(c=>c.type==='verkada/stream'));
   assert.equal(await page.getByRole('button',{name:'Live view',exact:true}).count(),0);

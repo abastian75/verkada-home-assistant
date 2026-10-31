@@ -1,3 +1,16 @@
+# Validation — 0.2.8
+
+Last plate now shares the live camera title row in both the sidebar and Camera
+card. The detection time remains in the label tooltip. Non-LPR cameras omit the
+label; absent detections retain the existing empty message. Long plate strings
+clip within the header without changing the video position or tile height.
+
+Focused browser geometry checks at 1440px and 390px verify title/plate alignment,
+identical tile height and video offset with/without LPR, long-content clipping,
+and timestamp tooltip. Existing card/sidebar empty/XSS/state-update checks pass.
+No Home Assistant restart or panel editor refresh is part of this frontend change.
+The separately staged 0.2.7 recorded-playback backend still requires HA restart.
+
 # Validation — 0.2.7
 
 Watch requested the correct event-centered window (10 seconds before the detection

@@ -1,5 +1,5 @@
-import { attachVideo, clearVideo } from "./player.js?v=0.2.7";
-import { plateText } from "./plate.js?v=0.2.7";
+import { attachVideo, clearVideo } from "./player.js?v=0.2.8";
+import { plateText } from "./plate.js?v=0.2.8";
 /* Native HA panel: no build step, external scripts or credentials in the browser. */
 class VerkadaPanel extends HTMLElement {
   constructor() {
@@ -47,7 +47,7 @@ class VerkadaPanel extends HTMLElement {
         nav{display:flex;gap:8px;border-bottom:1px solid var(--divider-color,#ddd);padding-bottom:12px;margin-bottom:20px} button,input,select{font:inherit;color:inherit} button{min-height:44px;padding:8px 16px;border:1px solid var(--divider-color,#bbb);border-radius:8px;background:var(--card-background-color,#fff);cursor:pointer} button:hover{background:var(--secondary-background-color,#eee)} button:disabled{opacity:.6;cursor:wait} button[aria-selected="true"]{background:var(--primary-color,#03a9f4);color:var(--text-primary-color,#fff);border-color:var(--primary-color,#03a9f4)}
         header button{background:transparent;color:inherit;border-color:currentColor} :focus-visible{outline:3px solid var(--primary-color,#03a9f4);outline-offset:3px} ::selection{background:var(--primary-color,#03a9f4);color:var(--text-primary-color,#fff)}
         input,select{display:block;width:100%;min-height:44px;padding:8px;border:1px solid var(--divider-color,#aaa);border-radius:6px;background:var(--card-background-color,#fff);caret-color:var(--primary-color,#03a9f4)} label{display:grid;gap:6px;font-size:14px} .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:16px;align-items:end;margin-bottom:16px} .actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
-        #health{margin:0 0 20px;line-height:1.5} #message{color:var(--error-color,#b00020);padding:12px 0;white-space:pre-wrap} #message:empty{display:none} .muted{color:var(--secondary-text-color,#666)} #cameras{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:20px} #cameras>div{min-width:0} .camera-title{margin:0 0 8px;font-weight:500} #cameras img,#cameras video{display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#000;margin-bottom:8px} .table-wrap{overflow:auto} table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums} th,td{text-align:left;padding:12px;border-bottom:1px solid var(--divider-color,#ddd);vertical-align:middle} th{font-size:14px;color:var(--secondary-text-color,#666)} td{overflow-wrap:anywhere} td img{width:112px;height:64px;object-fit:contain;background:var(--secondary-background-color,#eee)} .plate{font-weight:600;letter-spacing:.04em;white-space:nowrap} #player{margin:20px 0;max-width:900px} #player video{display:block;width:100%;background:#000;aspect-ratio:16/9} #player:empty{display:none} details{margin:12px 0} summary{cursor:pointer;min-height:44px;padding:12px 0} code{display:block;padding:12px;white-space:normal;overflow-wrap:anywhere;background:var(--secondary-background-color,#eee)} [hidden]{display:none!important} #pager{display:flex;gap:16px;align-items:center;margin-top:16px} a{color:var(--primary-color,#007da8);text-underline-offset:3px} .empty{padding:32px 0} @media(max-width:600px){main{padding:16px}header{padding:10px 12px}th,td{padding:8px}.optional{display:none}}
+        #health{margin:0 0 20px;line-height:1.5} #message{color:var(--error-color,#b00020);padding:12px 0;white-space:pre-wrap} #message:empty{display:none} .muted{color:var(--secondary-text-color,#666)} #cameras{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:20px} #cameras>div{min-width:0} .camera-heading{display:flex;align-items:center;gap:12px;margin-bottom:8px;min-width:0}.camera-title{margin:0;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.camera-plate{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%;min-width:0} #cameras img,#cameras video{display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#000;margin-bottom:8px} .table-wrap{overflow:auto} table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums} th,td{text-align:left;padding:12px;border-bottom:1px solid var(--divider-color,#ddd);vertical-align:middle} th{font-size:14px;color:var(--secondary-text-color,#666)} td{overflow-wrap:anywhere} td img{width:112px;height:64px;object-fit:contain;background:var(--secondary-background-color,#eee)} .plate{font-weight:600;letter-spacing:.04em;white-space:nowrap} #player{margin:20px 0;max-width:900px} #player video{display:block;width:100%;background:#000;aspect-ratio:16/9} #player:empty{display:none} details{margin:12px 0} summary{cursor:pointer;min-height:44px;padding:12px 0} code{display:block;padding:12px;white-space:normal;overflow-wrap:anywhere;background:var(--secondary-background-color,#eee)} [hidden]{display:none!important} #pager{display:flex;gap:16px;align-items:center;margin-top:16px} a{color:var(--primary-color,#007da8);text-underline-offset:3px} .empty{padding:32px 0} @media(max-width:600px){main{padding:16px}header{padding:10px 12px}th,td{padding:8px}.optional{display:none}}
       </style>
       <header><ha-menu-button></ha-menu-button><h1>Verkada</h1><button id="settings">Configure</button></header>
       <main><nav aria-label="Verkada views"><button data-tab="live" aria-selected="true">Live cameras</button><button data-tab="events" aria-selected="false">Events & recordings</button><button data-tab="setup" aria-selected="false">Connection</button></nav>
@@ -87,7 +87,8 @@ class VerkadaPanel extends HTMLElement {
   _text(id, value) { this.shadowRoot.querySelector("#"+id).textContent = value; }
   _renderPlates() {
     for (const label of this.shadowRoot.querySelectorAll("[data-plate-entity]")) {
-      const text = plateText(this._hass?.states[label.dataset.plateEntity]?.attributes);
+      const attributes = this._hass?.states[label.dataset.plateEntity]?.attributes;
+      const text = plateText(attributes,false); label.title = plateText(attributes);
       label.textContent = text; label.hidden = !text;
     }
   }
@@ -122,7 +123,7 @@ class VerkadaPanel extends HTMLElement {
       if (this._tab!=="live" || !this.isConnected) return;
       for (const camera of this._data.cameras) {
         const wrapper=document.createElement("div");
-        const title=document.createElement("p");title.className="camera-title";title.textContent=`${camera.name} · ${camera.status||"Unknown"}`;wrapper.append(title);
+        const title=document.createElement("p");title.className="camera-title";title.textContent=`${camera.name} · ${camera.status||"Unknown"}`;const heading=document.createElement("div");heading.className="camera-heading";heading.append(title);wrapper.append(heading);
         if (!camera.entity_id) { const message=document.createElement("p");message.textContent="Camera entity is disabled or not ready.";wrapper.append(message); }
         else {
           const image=document.createElement("img");image.alt=`${camera.name} — latest cloud thumbnail`;image.dataset.entity=camera.entity_id;
@@ -142,8 +143,8 @@ class VerkadaPanel extends HTMLElement {
             finally {button.disabled=false;}
           };
           button.onclick=startLive;
-          const plate=document.createElement("p");plate.dataset.plateEntity=camera.entity_id;plate.style.fontWeight="600";plate.setAttribute("role","status");
-          wrapper.append(image,video,plate,state,button);
+          const plate=document.createElement("span");plate.dataset.plateEntity=camera.entity_id;plate.className="camera-plate";plate.setAttribute("role","status");
+          heading.append(plate);wrapper.append(image,video,state,button);
           if(["live","online"].includes((camera.status||"").toLowerCase()))setTimeout(startLive,0);
           else {state.textContent="Camera offline";button.hidden=false;}
 

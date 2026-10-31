@@ -8,7 +8,7 @@ const path=require('node:path');
  await page.goto('http://127.0.0.1:8769/tests/cards_fixture.html');
  const lpr=page.locator('verkada-lpr-card'),events=page.locator('verkada-events-card'),camera=page.locator('verkada-camera-card');
  await lpr.getByText('TEST123',{exact:true}).first().waitFor();
- await camera.getByText(/Last plate: TEST123 · Last seen/).waitFor();
+ await camera.getByText(/Last plate: TEST123/).waitFor();
  await camera.evaluate(card=>{const hass=card._hass;hass.states[card._config.entity].attributes.last_plate='<img src=x onerror="window.bad=true">';card.hass={...hass};});
  await camera.getByText(/Last plate: <img/).waitFor();
  assert.equal(await camera.locator('#plate img').count(),0,'Plate caption executed markup');
