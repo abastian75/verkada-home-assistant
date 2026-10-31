@@ -1,3 +1,26 @@
+# Validation — 0.2.7
+
+Watch requested the correct event-centered window (10 seconds before the detection
+through 50 seconds after). The recorded playback path incorrectly fed the finite
+vendor clip through HA's live remuxer. A real vendor response contained 17 segments,
+68 seconds and ENDLIST; HA exposed a moving 2–3-segment, 8–12-second playlist without
+ENDLIST. Those checks demonstrate a lost recording boundary, not a timezone fix.
+
+Recorded playback now uses the same bounded camera-scoped relay as live footage,
+with the requested start/end fixed in the server-side session. It preserves all
+segments, encryption-key references and ENDLIST, and HLS.js explicitly starts at
+position zero. Ordinary HA camera entities retain HA's own stream path.
+
+Official HA tests verify exact requested camera/interval/codec, complete finite
+playlist and first segment, stopped-session invalidation, eight-recording limit,
+existing camera permissions and unload cleanup. Browser checks verify the clip
+starts within its opening seconds and remains VOD, with unchanged Watch interval.
+A real plate/vehicle visual match requires checking the installed backend after
+HA restarts. No private footage, plates, camera identifiers or signed URLs are
+published in this repository.
+
+## Prior checks
+
 # Validation — 0.2.6
 
 The user reported continued spinning after 0.2.5. An old open dashboard was still

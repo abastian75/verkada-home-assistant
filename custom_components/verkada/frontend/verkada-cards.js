@@ -1,5 +1,5 @@
-import { attachVideo, clearVideo } from "./player.js?v=0.2.6";
-import { plateText } from "./plate.js?v=0.2.6";
+import { attachVideo, clearVideo } from "./player.js?v=0.2.7";
+import { plateText } from "./plate.js?v=0.2.7";
 
 // HA replaces the native registry during boot; earlier definitions are silently lost.
 while (!customElements.get("home-assistant")) await new Promise(resolve => setTimeout(resolve, 50));

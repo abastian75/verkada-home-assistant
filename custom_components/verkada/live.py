@@ -1,4 +1,4 @@
-"""Camera-scoped live HLS passthrough; vendor credentials never reach the browser."""
+"""Camera-scoped live/recorded HLS passthrough; vendor credentials never reach the browser."""
 
 import hashlib
 import re
@@ -55,20 +55,37 @@ class LiveView(HomeAssistantView):
         self.hass = hass
         self.sessions = OrderedDict()
 
-    def start(self, hub, cid):
+    def start(self, hub, cid, *, start=0, end=0, owner=None):
         now = time.monotonic()
         for key, value in list(self.sessions.items()):
             if now - value["used"] > 300:
                 self.sessions.pop(key)
+        if (
+            owner
+            and sum(
+                value["hub"] is hub and value["owner"] is not None
+                for value in self.sessions.values()
+            )
+            >= 8
+        ):
+            raise VerkadaError("Close another recorded playback before starting a new one.")
         if len(self.sessions) >= 64:
             raise VerkadaError("Too many video viewers; close another view and retry")
         key = secrets.token_urlsafe(24)
-        self.sessions[key] = {"hub": hub, "camera": cid, "used": now, "urls": OrderedDict()}
+        self.sessions[key] = {
+            "hub": hub,
+            "camera": cid,
+            "used": now,
+            "urls": OrderedDict(),
+            "start": start,
+            "end": end,
+            "owner": owner,
+        }
         return f"/api/verkada/live/{key}/index.m3u8"
 
-    def discard(self, hub):
+    def discard(self, hub, owner=None):
         for key, value in list(self.sessions.items()):
-            if value["hub"] is hub:
+            if value["hub"] is hub and (owner is None or value["owner"] == owner):
                 self.sessions.pop(key)
 
     def rewrite(self, key, session, source, body):
@@ -87,7 +104,9 @@ class LiveView(HomeAssistantView):
             urls = session["urls"]
             urls[resource] = url
             urls.move_to_end(resource)
-            while len(urls) > 256:
+            # Finite recordings must retain their opening segments for seeking.
+            limit = 8192 if session["end"] else 256
+            while len(urls) > limit:
                 urls.popitem(last=False)
             return f"/api/verkada/live/{key}/{resource}"
 
@@ -121,7 +140,9 @@ class LiveView(HomeAssistantView):
                 url = await hub.api.stream_url(
                     value["camera"],
                     high=hub.options["high_resolution"],
-                    codec=hub.options["live_codec"],
+                    codec=hub.options["live_codec"] if not value["end"] else "hevc",
+                    start=value["start"],
+                    end=value["end"],
                 )
             else:
                 url = value["urls"].get(resource)

@@ -117,8 +117,6 @@ async def async_unload_entry(hass, entry):
     if await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hub = hass.data[DOMAIN].pop(entry.entry_id)
         hass.data["verkada_live"].discard(hub)
-        for stream in hub.playbacks.values():
-            await stream.stop()
         frontend.async_remove_panel(hass, "verkada-" + entry.entry_id)
         await hub.store.async_save(hub.saved_history())
         return True

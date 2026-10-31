@@ -4,8 +4,6 @@ import time
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
-from homeassistant.components.camera import DynamicStreamSettings
-from homeassistant.components.stream import create_stream
 from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
@@ -25,26 +23,15 @@ def async_register(hass):
 
 
 async def async_stop_playback(hub, owner):
-    stream = hub.playbacks.pop(owner, None)
-    if stream:
-        await stream.stop()
+    hub.hass.data["verkada_live"].discard(hub, owner)
 
 
 async def async_start_playback(hass, hub, owner, cid, start, end):
     if not cid or not (0 < start < end <= time.time() and end - start <= 3600):
         raise HomeAssistantError("Choose a camera and a past interval of at most one hour.")
-    for key, stream in list(hub.playbacks.items()):
-        if not stream.outputs():
-            hub.playbacks.pop(key, None)
-    if owner not in hub.playbacks and len(hub.playbacks) >= 8:
-        raise HomeAssistantError("Close another recorded playback before starting a new one.")
-    url = await hub.api.stream_url(cid, high=hub.options["high_resolution"], start=start, end=end)
     await async_stop_playback(hub, owner)
-    stream = create_stream(hass, url, {}, DynamicStreamSettings(), stream_label="verkada_history")
-    stream.add_provider("hls")
-    hub.playbacks[owner] = stream
-    await stream.start()
-    return stream.endpoint_url("hls")
+    # HA's live remuxer drops the opening segments of a finite recording.
+    return hass.data["verkada_live"].start(hub, cid, start=start, end=end, owner=owner)
 
 
 @websocket_api.websocket_command(

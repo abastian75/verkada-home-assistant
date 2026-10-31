@@ -275,7 +275,7 @@ async def main():
                     await source_site.start()
                     source_port = source_site._server.sockets[0].getsockname()[1]
                     hub.api.stream_url = AsyncMock(
-                        return_value=f"http://127.0.0.1:{source_port}/source.m3u8"
+                        return_value=f"{hub.api.base}/stream/cameras/v1/footage/stream/source.m3u8"
                     )
                     url = "http://127.0.0.1:8123/api/webhook/" + entry.data["webhook_id"]
                     payload = {
@@ -343,14 +343,73 @@ async def main():
                             4, "playback", camera_id=CAM, start=now - 120, end=now - 60
                         )
                         assert value["success"], value
-                        async with session.get(
-                            "http://127.0.0.1:8123" + value["result"]["url"]
-                        ) as response:
-                            assert response.status == 200, await response.text()
-                            playlist = await response.text()
-                            assert "#EXTM3U" in playlist
+                        history_url = value["result"]["url"]
+
+                        async def fixture_media(hub, url, range_header):
+                            filename = url.split("?")[0].rsplit("/", 1)[1]
+                            async with session.get(
+                                f"http://127.0.0.1:{source_port}/{filename}"
+                            ) as response:
+                                return (
+                                    await response.read(),
+                                    response.status,
+                                    {"Content-Type": response.headers["Content-Type"]},
+                                )
+
+                        with patch("custom_components.verkada.live.fetch_media", fixture_media):
+                            async with session.get(
+                                "http://127.0.0.1:8123" + history_url
+                            ) as response:
+                                assert response.status == 200, await response.text()
+                                playlist = await response.text()
+                                assert "#EXT-X-ENDLIST" in playlist, (
+                                    "Recording became a live window"
+                                )
+                                original = (footage / "source.m3u8").read_text()
+                                assert playlist.count("#EXTINF:") == original.count("#EXTINF:")
+                                assert "jwt=" not in playlist and "https://" not in playlist
+                            hub.api.stream_url.assert_awaited_with(
+                                CAM, high=False, codec="hevc", start=now - 120, end=now - 60
+                            )
+                            first_segment = next(
+                                line for line in playlist.splitlines() if not line.startswith("#")
+                            )
+                            async with session.get(
+                                "http://127.0.0.1:8123" + first_segment
+                            ) as response:
+                                assert response.status == 200
+                                assert (
+                                    await response.read() == (footage / "source0.ts").read_bytes()
+                                )
                         value = await command(5, "stop")
                         assert value["success"]
+                        async with session.get("http://127.0.0.1:8123" + history_url) as response:
+                            assert response.status == 404, "Stopped recording remained accessible"
+                        from custom_components.verkada.api import VerkadaError
+
+                        view = hass.data["verkada_live"]
+                        for i in range(8):
+                            view.start(hub, CAM, start=now - 120, end=now - 60, owner=f"test-{i}")
+                        nonce = next(reversed(view.sessions))
+                        recording = view.sessions[nonce]
+                        upstream = f"{hub.api.base}/stream/cameras/v1/footage/stream/"
+                        long_clip = (
+                            '#EXTM3U\n#EXT-X-MAP:URI="init.mp4"\n#EXT-X-KEY:METHOD=AES-128,URI="key"\n'
+                            + "".join(f"#EXTINF:4,\nsegment-{i}.m4s\n" for i in range(900))
+                            + "#EXT-X-ENDLIST\n"
+                        ).encode()
+                        rewritten = view.rewrite(
+                            nonce, recording, upstream + "stream.m3u8", long_clip
+                        )
+                        assert len(recording["urls"]) == 902, "Recording evicted opening resources"
+                        assert b"#EXT-X-ENDLIST" in rewritten
+                        try:
+                            view.start(hub, CAM, start=now - 120, end=now - 60, owner="test-9")
+                            raise AssertionError("Playback viewer limit was bypassed")
+                        except VerkadaError:
+                            pass
+                        for i in range(8):
+                            view.discard(hub, owner=f"test-{i}")
                     async with session.ws_connect("http://127.0.0.1:8123/api/websocket") as ws:
                         await ws.receive_json()
                         await ws.send_json({"type": "auth", "access_token": normal_access})

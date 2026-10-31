@@ -29,7 +29,6 @@ class VerkadaCoordinator(DataUpdateCoordinator):
         self.last_poll = None
         self.cameras_by_id = {}
         self.inventory = {}
-        self.playbacks = {}
         self.store = Store(hass, 1, f"{DOMAIN}.{entry.entry_id}.history")
         super().__init__(
             hass,
