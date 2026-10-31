@@ -43,7 +43,8 @@ export async function attachVideo(video, url, onError = () => {}, onPlaying = ()
   if (!current()) return;
   // Prefer MSE: some Chromium versions advertise native HLS without reliable LL-HLS playback.
   if (Hls?.isSupported()) {
-    const hls = new Hls({ maxBufferLength: 30 }); video._hls = hls;
+    // LL-HLS long polling exhausts HTTP/1 connection slots in multi-camera grids.
+    const hls = new Hls({ maxBufferLength: 30, backBufferLength: 15, lowLatencyMode: false }); video._hls = hls;
     hls.on(Hls.Events.MANIFEST_PARSED, play);
     hls.on(Hls.Events.ERROR, (_, data) => {
       if (!current() || !data.fatal) return;

@@ -172,6 +172,17 @@ permissions are checked when those features are used, not assumed from setup.
   camera snapshots are proxied through HA. Event images are loaded by the browser
   from the vendor's signed URLs with no referrer.
 
+LPR-enabled live tiles and Verkada Camera cards show the **last detected plate**
+and its detection time below the video. Other cameras have no plate caption.
+The caption updates from HA state without restarting the stream; it identifies
+the latest detection, not a vehicle currently present in the live picture.
+
+The bundled player uses regular HLS to avoid exhausting HTTP/1 browser connection
+slots when several cameras play together. This trades some startup/live latency
+for multi-camera reliability, following [HA's LL-HLS guidance](https://www.home-assistant.io/integrations/stream/#ll-hls---low-latency-hls).
+For lower bandwidth and decoding load, leave **High resolution video and thumbnails**
+off in integration options.
+
 The API uses HLS; expect buffering and cloud latency. This is not a local RTSP
 replacement or a promise of UniFi Protect feature parity. Still thumbnails may
 lag by up to five minutes. HLS.js is bundled locally for browsers without native

@@ -7,6 +7,6 @@ const data={title:'Verkada',connected:true,last_poll:now,sources:{alerts:{state:
 window.fixtureCalls=[];
 const videoURL=new URL(location.href).searchParams.get('video');
 const panel=document.querySelector('verkada-panel');
-panel.hass={states:Object.fromEntries(cameras.map(c=>[c.entity_id,{state:c.status==='Live'?'idle':'unavailable',attributes:{entity_picture:picture}}])),hassUrl:url=>url,callWS:async msg=>{window.fixtureCalls.push(msg);if(msg.action==='playback'||msg.type==='camera/stream'){if(videoURL)return {url:videoURL};throw new Error('Synthetic fixture: real video is tested separately in the HA runtime.');}if(msg.action==='search')return {...data,search_results:data.events,search_omitted:0};return data;}};
+panel.hass={states:Object.fromEntries(cameras.map(c=>[c.entity_id,{state:c.status==='Live'?'idle':'unavailable',attributes:{entity_picture:picture,...(c.camera_id==='camera-one'?{plate_tracking:true,last_plate:'TEST123',plate_last_seen:now-30}:{})}}])),hassUrl:url=>url,callWS:async msg=>{window.fixtureCalls.push(msg);if(msg.action==='playback'||msg.type==='camera/stream'){if(videoURL)return {url:videoURL};throw new Error('Synthetic fixture: real video is tested separately in the HA runtime.');}if(msg.action==='search')return {...data,search_results:data.events,search_omitted:0};return data;}};
 panel.panel={config:{entry_id:'synthetic-entry'}};
 </script></body></html>

@@ -1,4 +1,23 @@
-# Validation — 0.2.1
+# Validation — 0.2.2
+
+## Added for 0.2.2
+
+- Configured LPR/Helix cameras expose their latest plate and detection timestamp
+  on the camera state. Sidebar live tiles and Camera cards render a caption below
+  the video, without restarting video on state updates. Other cameras omit it.
+- HA runtime checks cover plate metadata on configured sources and its absence on
+  other cameras. Browser checks cover populated/empty/non-LPR captions, safe text
+  rendering and live updates.
+- Disabled HLS.js low-latency mode. HA documents that LL-HLS uses extra connections
+  and its own player falls back to regular HLS for HTTP/1 multi-camera grids; our
+  custom player previously lacked that protection. A browser regression decodes
+  five simultaneous synthetic streams, checks advancing times and regular-HLS
+  configuration on each, and verifies another HTTP request completes.
+- Installed the change with exact encrypted-SMB read-back and selected low
+  resolution through HA's options flow, retaining the other integration options.
+- The actual HA dashboard rendered the LPR caption and five automatic camera
+  streams, including Side Yard. The sustained test was interrupted by a separate
+  user-initiated HA update/restart; initial playback is not a long-run pass.
 
 ## Real installation checks on 2026-10-30
 

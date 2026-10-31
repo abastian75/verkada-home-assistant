@@ -45,6 +45,24 @@ class VerkadaCamera(VerkadaEntity, Camera):
             self.coordinator.data.get(self.camera_id, {}).get("status", "")
         ).lower() in ("live", "online")
 
+    @property
+    def extra_state_attributes(self):
+        if self.camera_id not in self.coordinator.plate_camera_ids:
+            return {}
+        event = next(
+            (
+                e
+                for e in self.coordinator.events
+                if e["camera_id"] == self.camera_id and e.get("plate")
+            ),
+            None,
+        )
+        return {
+            "plate_tracking": True,
+            "last_plate": event["plate"] if event else None,
+            "plate_last_seen": event["timestamp"] if event else None,
+        }
+
     async def async_camera_image(self, width=None, height=None):
         if self._image is not None and time.monotonic() - self._image_at < 60:
             return self._image

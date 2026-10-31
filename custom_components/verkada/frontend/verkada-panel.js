@@ -1,4 +1,5 @@
-import { attachVideo, clearVideo } from "./player.js?v=0.2.0";
+import { attachVideo, clearVideo } from "./player.js?v=0.2.2";
+import { plateText } from "./plate.js?v=0.2.2";
 /* Native HA panel: no build step, external scripts or credentials in the browser. */
 class VerkadaPanel extends HTMLElement {
   constructor() {
@@ -16,6 +17,7 @@ class VerkadaPanel extends HTMLElement {
     }
     const menu = this.shadowRoot.querySelector("ha-menu-button");
     if (menu) menu.hass = value;
+    this._renderPlates();
     this._start();
   }
   set panel(value) { this._panel = value; this._start(); }
@@ -82,6 +84,12 @@ class VerkadaPanel extends HTMLElement {
     root.querySelector("#next").onclick = () => { this._page++; this._renderEvents(); };
   }
   _text(id, value) { this.shadowRoot.querySelector("#"+id).textContent = value; }
+  _renderPlates() {
+    for (const label of this.shadowRoot.querySelectorAll("[data-plate-entity]")) {
+      const text = plateText(this._hass?.states[label.dataset.plateEntity]?.attributes);
+      label.textContent = text; label.hidden = !text;
+    }
+  }
   _error(error) { this._text("message", error?.message || String(error)); }
   async _load(action="status", args={}) {
     const request = ++this._request;
@@ -133,13 +141,15 @@ class VerkadaPanel extends HTMLElement {
             finally {button.disabled=false;}
           };
           button.onclick=startLive;
-          wrapper.append(image,video,state,button);
+          const plate=document.createElement("p");plate.dataset.plateEntity=camera.entity_id;plate.style.fontWeight="600";plate.setAttribute("role","status");
+          wrapper.append(image,video,plate,state,button);
           if(["live","online"].includes((camera.status||"").toLowerCase()))setTimeout(startLive,0);
           else {state.textContent="Camera offline";button.hidden=false;}
 
         }
         target.append(wrapper);
       }
+      this._renderPlates();
     } catch(error) { target.textContent=error.message; }
   }
   _time(timestamp) { return timestamp ? new Date(timestamp*1000).toLocaleString() : "Never"; }

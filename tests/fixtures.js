@@ -5,7 +5,7 @@ const picture="data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w
 const data={connected:true,last_poll:now,sources:{alerts:{state:"ok",last_success:now},"lpr:camera-one":{state:"ok",last_success:now}},plate_tracking:true,cameras,events:[{id:"1",source:"lpr",camera_id:"camera-one",timestamp:now-30,plate:"TEST123",label:"lpr",confidence:.98,attributes:{}},{id:"2",source:"alert",camera_id:"camera-one",timestamp:now-60,plate:null,label:"Person in driveway",attributes:{}},{id:"3",source:"helix",camera_id:"camera-two",timestamp:now-90,plate:"DEMO456",label:"Vehicle arrival",attributes:{make:"Synthetic",color:"Blue"}},{id:"4",source:"alert",camera_id:"camera-one",timestamp:now-120,plate:null,label:'<img src=x onerror="window.bad=true">',attributes:{}}]};
 export function createHass(){
  const params=new URL(location.href).searchParams,video=params.get("video");window.fixtureCalls=[];
- return {states:Object.fromEntries(cameras.map(c=>[c.entity_id,{state:c.status==="Live"?"idle":"unavailable",attributes:{friendly_name:c.name,entity_picture:picture}}])),hassUrl:url=>url,callWS:async msg=>{
+ return {states:Object.fromEntries(cameras.map(c=>[c.entity_id,{state:c.status==="Live"?"idle":"unavailable",attributes:{friendly_name:c.name,entity_picture:picture,...(c.plate_tracking?{plate_tracking:true,last_plate:params.has("empty")?null:"TEST123",plate_last_seen:now-30}:{})}}])),hassUrl:url=>url,callWS:async msg=>{
   window.fixtureCalls.push(msg);
   if(msg.type==="camera/stream"||msg.action==="playback"){if(video)return {url:video};throw new Error("Synthetic fixture: real video is tested separately in the HA runtime.");}
   if(msg.action==="stop")return {};

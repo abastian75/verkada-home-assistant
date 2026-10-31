@@ -190,6 +190,18 @@ async def main():
                 assert {e["plate"] for e in hub.events if e["plate"]} == {"TEST123", "HELIX123"}
                 assert lpr_ranges[0] == 86400, "Initial LPR sync did not backfill a day"
                 assert hub.last_event is None, "LPR backfill emitted an automation event"
+                camera_entities = hass.data[DATA_COMPONENT].entities
+                plate_camera = next(
+                    e for e in camera_entities if getattr(e, "camera_id", None) == CAM
+                )
+                other_camera = next(
+                    e for e in camera_entities if getattr(e, "camera_id", None) == CAM2
+                )
+                assert plate_camera.extra_state_attributes["last_plate"] in {"TEST123", "HELIX123"}
+                assert plate_camera.extra_state_attributes["plate_last_seen"] > 0
+                assert other_camera.extra_state_attributes == {}, (
+                    "Non-LPR camera exposed a plate caption"
+                )
                 retired = registry.async_get(legacy.entity_id)
                 assert retired.disabled_by == er.RegistryEntryDisabler.INTEGRATION
                 assert retired.hidden_by == er.RegistryEntryHider.INTEGRATION

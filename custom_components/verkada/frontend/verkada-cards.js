@@ -1,4 +1,5 @@
-import { attachVideo, clearVideo } from "./player.js?v=0.2.0";
+import { attachVideo, clearVideo } from "./player.js?v=0.2.2";
+import { plateText } from "./plate.js?v=0.2.2";
 
 const styles = `
   :host{display:block;color:var(--primary-text-color,#212121);font-family:var(--paper-font-body1_-_font-family,Roboto,sans-serif)}
@@ -39,7 +40,7 @@ class VerkadaCameraCard extends VerkadaBase {
     if(!this.isConnected||!this._hass||!this._config)return;
     if(!this._built){
       this._frame("Verkada camera");
-      this.shadowRoot.querySelector("#body").innerHTML=`<div class="media"><video controls autoplay muted playsinline></video></div><div class="content"><p id="error" class="error" role="alert"></p><div class="actions"><p id="status" class="muted" role="status"></p><button id="retry" hidden>Retry</button></div></div>`;
+      this.shadowRoot.querySelector("#body").innerHTML=`<div class="media"><video controls autoplay muted playsinline></video></div><div class="content"><p id="plate" style="font-weight:600" role="status" hidden></p><p id="error" class="error" role="alert"></p><div class="actions"><p id="status" class="muted" role="status"></p><button id="retry" hidden>Retry</button></div></div>`;
       this.shadowRoot.querySelector("#retry").onclick=()=>{this._running=false;this._startCamera();};
       this._built=true;
     }
@@ -48,6 +49,7 @@ class VerkadaCameraCard extends VerkadaBase {
   _updateState(){
     if(!this._built)return;
     const state=this._hass.states[this._config.entity];
+    const plate=this.shadowRoot.querySelector("#plate");plate.textContent=plateText(state?.attributes);plate.hidden=!plate.textContent;
     this.shadowRoot.querySelector("h2").textContent=this._config.title||state?.attributes.friendly_name||"Verkada camera";
     this._text("badge",state&&!["unavailable","unknown"].includes(state.state)?"Connected":"Unavailable");
     const video=this.shadowRoot.querySelector("video");
