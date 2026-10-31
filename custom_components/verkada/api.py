@@ -62,8 +62,14 @@ class VerkadaClient:
                 if response.status != 200:
                     raise VerkadaError(f"Verkada API returned HTTP {response.status}")
                 if binary:
-                    data = await response.content.read(8 * 1024 * 1024 + 1)
-                    if len(data) > 8 * 1024 * 1024 or not data.startswith(b"\xff\xd8"):
+                    chunks, size = [], 0
+                    async for chunk in response.content.iter_chunked(65536):
+                        size += len(chunk)
+                        if size > 8 * 1024 * 1024:
+                            raise VerkadaError("Oversized thumbnail")
+                        chunks.append(chunk)
+                    data = b"".join(chunks)
+                    if not data.startswith(b"\xff\xd8") or not data.endswith(b"\xff\xd9"):
                         raise VerkadaError("Invalid or oversized thumbnail")
                     return data
                 return await response.json()

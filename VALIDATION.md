@@ -3,11 +3,12 @@
 ## Passed locally
 
 - Python lint/format and JavaScript syntax checks.
-- Eight contract/security tests: signature validation and stale/future replay
+- Ten contract/security tests: signature validation and stale/future replay
   rejection; native LPR and custom Helix mapping; untrusted image URL filtering;
   concurrent token caching and renewal; expired-auth retry; pagination completion
   and repeated-cursor rejection; explicit failure on truncated Helix results;
-  streaming key and region/query construction.
+  streaming key and region/query construction; complete chunked thumbnail reads;
+  rate-limit backoff.
 - Isolated official Home Assistant **2026.10.4** container with external networking
   disabled: actual config flow, setup, options/reload, camera/sensor/event entities,
   partial source permission failure/recovery, history deduplication, diagnostics

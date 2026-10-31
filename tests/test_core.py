@@ -136,6 +136,59 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
             api._request.await_args.kwargs["headers"], {"x-api-key": "test-stream-key"}
         )
 
+    async def test_chunked_thumbnail_reads_every_chunk(self):
+        class Content:
+            async def iter_chunked(self, size):
+                for chunk in [b"\xff\xd8", b"synthetic", b"\xff\xd9"]:
+                    yield chunk
+
+        class Response:
+            status = 200
+            headers = {}
+            content = Content()
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+        class Session:
+            def request(self, *args, **kwargs):
+                return Response()
+
+        api = self.api()
+        api.session = Session()
+        self.assertEqual(
+            await api._request("GET", "/thumbnail", binary=True), b"\xff\xd8synthetic\xff\xd9"
+        )
+
+    async def test_rate_limit_blocks_followup_requests(self):
+        class Response:
+            status = 429
+            headers = {"Retry-After": "120"}
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+        class Session:
+            calls = 0
+
+            def request(self, *args, **kwargs):
+                self.calls += 1
+                return Response()
+
+        api = self.api()
+        api.session = Session()
+        for _ in range(2):
+            with self.assertRaises(VerkadaError):
+                await api._request("GET", "/example")
+        self.assertEqual(api.session.calls, 1)
+        self.assertGreater(api._blocked_until, time.monotonic() + 100)
+
 
 if __name__ == "__main__":
     unittest.main()
