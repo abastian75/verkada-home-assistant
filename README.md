@@ -1,10 +1,26 @@
 # Verkada for Home Assistant
 
+## Downloaded in HACS? Finish setup here
+
+**Download installs the files. It does not open Verkada setup or add cameras yet.**
+
+1. **Restart Home Assistant.** Open **Settings → HACS Restart required → Submit**.
+   This briefly interrupts HA while it loads the new integration. A browser refresh
+   is not a Home Assistant restart.
+2. After HA reconnects, **[Set up Verkada](https://my.home-assistant.io/redirect/config_flow_start/?domain=verkada)**.
+   This opens the API-key form in your HA instance. Enter credentials there.
+3. Once connected, **Verkada appears in the sidebar** and cameras appear under
+   **Settings → Devices & services → Verkada**.
+
+If setup says **Integration not found**, finish the HA restart first, then reload
+the browser and try the setup link again. If HACS shows **Version downloaded**,
+the download already succeeded; continue at step 1.
+
+**First time here? [Download Verkada in HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=abastian75&repository=verkada-home-assistant&category=integration), then follow the steps above.**
+
 Unofficial, read-only Verkada camera integration for Home Assistant, distributed
 through a **HACS custom repository**. Maintained in Anthony's personal GitHub
 account, **abastian75**. Not affiliated with Verkada, MGT or Layer 3.
-
-[**Install through HACS**](https://my.home-assistant.io/redirect/hacs_repository/?owner=abastian75&repository=verkada-home-assistant&category=integration)
 
 ## Install and configure
 
@@ -14,7 +30,8 @@ an official or HACS default-list integration.
 
 1. Open the HACS link above and add the repository. Download **Verkada**.
 2. **Restart Home Assistant**.
-3. Go to **Settings → Devices & services → Add integration → Verkada**.
+3. **[Set up Verkada](https://my.home-assistant.io/redirect/config_flow_start/?domain=verkada)**,
+   or go to **Settings → Devices & services → Add integration → Verkada**.
 4. Enter a name, service region, organization UUID and API key. You may enter a
    separate streaming key, or leave it blank to use the main key for streaming.
 5. Cameras appear as HA devices and camera entities. Open **Verkada** in the
