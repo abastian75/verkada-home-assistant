@@ -87,7 +87,7 @@ resource is needed.
 Open your dashboard → **Edit dashboard → Add card** and search **Verkada**:
 
 - **Verkada Camera**: choose a camera. Live video starts automatically, with a
-  thumbnail while connecting and a Retry control for failures.
+  thumbnail while connecting and automatic reconnection after network failures or stalled video. A Retry control remains available.
 - **Verkada Events**: choose the integration and optionally a camera, title and
   row count. Shows recent alerts; **Watch** plays the associated recording.
 - **Verkada LPR**: choose a configured plate camera or all cameras. Shows the

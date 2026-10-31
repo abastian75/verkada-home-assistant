@@ -1,4 +1,24 @@
-# Validation — 0.2.5
+# Validation — 0.2.6
+
+The user reported continued spinning after 0.2.5. An old open dashboard was still
+running 0.2.4, but a separate fresh 0.2.5 page also stalled on all five feeds at
+about 133 video seconds. Cache alone did not explain the report. Fresh relay
+requests still returned advancing playlists and playable media. The exact
+upstream/browser trigger for the interruption remains unconfirmed.
+
+The shared live player now reconnects after fatal network failures and after
+25 seconds without playback progress. It renews expired relay sessions and
+cancels retries when cards are removed. Recordings retain their existing lifecycle.
+The sidebar also rebuilds cleared tiles when the same panel element reconnects.
+
+Focused browser checks exercise real HLS decode, a simulated fatal network error,
+an expired-session response, silent-stall recovery, retry cancellation, and
+sidebar removal/reinsertion. Contract tests and isolated HA smoke tests pass in
+the official HA 2026.10.4 container. Frontend assets were installed and read back
+without restarting HA or publishing any dashboard configuration.
+
+## Earlier bounded checks (0.2.5)
+
 
 ## Verified on the installed HA 2026.10.4 system
 

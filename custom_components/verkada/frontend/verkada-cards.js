@@ -1,5 +1,5 @@
-import { attachVideo, clearVideo } from "./player.js?v=0.2.5";
-import { plateText } from "./plate.js?v=0.2.5";
+import { attachVideo, clearVideo } from "./player.js?v=0.2.6";
+import { plateText } from "./plate.js?v=0.2.6";
 
 // HA replaces the native registry during boot; earlier definitions are silently lost.
 while (!customElements.get("home-assistant")) await new Promise(resolve => setTimeout(resolve, 50));
@@ -70,7 +70,7 @@ class VerkadaCameraCard extends VerkadaBase {
     try{
       const result=await this._hass.callWS({type:"verkada/stream",entity_id:this._config.entity});
       if(!this.isConnected||video!==this.shadowRoot.querySelector("video"))return;
-      await attachVideo(video,this._hass.hassUrl(result.url),error=>{this._error(error);this._text("status","Live video unavailable");button.hidden=false;},()=>this._text("status","Live"));
+      await attachVideo(video,this._hass.hassUrl(result.url),error=>{this._error(error);this._text("status","Live video unavailable");button.hidden=false;},()=>{this._error("");this._text("status","Live");button.hidden=true;},async()=>this._hass.hassUrl((await this._hass.callWS({type:"verkada/stream",entity_id:this._config.entity})).url));
     }catch(error){this._error(error);this._text("status","Live video unavailable");button.hidden=false;}
   }
 }

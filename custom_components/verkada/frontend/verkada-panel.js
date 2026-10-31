@@ -1,5 +1,5 @@
-import { attachVideo, clearVideo } from "./player.js?v=0.2.5";
-import { plateText } from "./plate.js?v=0.2.5";
+import { attachVideo, clearVideo } from "./player.js?v=0.2.6";
+import { plateText } from "./plate.js?v=0.2.6";
 /* Native HA panel: no build step, external scripts or credentials in the browser. */
 class VerkadaPanel extends HTMLElement {
   constructor() {
@@ -26,6 +26,7 @@ class VerkadaPanel extends HTMLElement {
   disconnectedCallback() {
     clearInterval(this._timer); this._timer = null;
     this._clearVideos();
+    this.shadowRoot.querySelector("#cameras")?.replaceChildren();
     if (this._hass && this._panel) this._call("stop").catch(() => {});
   }
   async _call(action, args = {}) {
@@ -136,7 +137,7 @@ class VerkadaPanel extends HTMLElement {
               const result=await this._hass.callWS({type:"verkada/stream",entity_id:camera.entity_id});
               if(this._tab!=="live"||!wrapper.isConnected)return;
               image.hidden=true;video.hidden=false;video.poster=picture?this._hass.hassUrl(picture):"";
-              await attachVideo(video,this._hass.hassUrl(result.url),error=>{state.textContent=error.message;button.hidden=false;},()=>{state.textContent="Live";});
+              await attachVideo(video,this._hass.hassUrl(result.url),error=>{state.textContent=error.message;button.hidden=false;},()=>{state.textContent="Live";button.hidden=true;},async()=>this._hass.hassUrl((await this._hass.callWS({type:"verkada/stream",entity_id:camera.entity_id})).url));
             } catch(error) {clearVideo(video);video.hidden=true;image.hidden=false;state.textContent=error.message;button.hidden=false;}
             finally {button.disabled=false;}
           };
